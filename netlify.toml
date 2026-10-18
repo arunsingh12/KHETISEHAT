@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Ship the generated Prisma client — including the rhel query-engine binary
+# (see `binaryTargets` in prisma/schema.prisma) — with the function, since
+# Netlify's static analysis doesn't trace the native engine file.
+[functions]
+  included_files = ["src/generated/prisma/**"]

@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --color-paper: #f2f5ec;
+  --color-surface: #fbfcf8;
+  --color-surface-2: #edf1e5;
+  --color-ink: #1a2218;
+  --color-ink-soft: #55604f;
+  --color-ink-faint: #808b7a;
+  --color-line: #d5ddcb;
+  --color-line-soft: #e3e9da;
+
+  --color-brand: #2e6b43;
+  --color-brand-deep: #1e4a2e;
+  --color-brand-light: #e7f1e8;
+  --color-marigold: #c9781a;
+  --color-marigold-light: #f6ead5;
+
+  --color-status-pending: #9a6410;
+  --color-status-pending-bg: #f6ead5;
+  --color-status-active: #256b43;
+  --color-status-active-bg: #e7f1e8;
+  --color-status-danger: #9e3b26;
+  --color-status-danger-bg: #f6e3dc;
+  --color-status-neutral: #5c6b75;
+  --color-status-neutral-bg: #e6ebee;
+}
+
+@theme inline {
+  --color-paper: var(--color-paper);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-ink-faint: var(--color-ink-faint);
+  --color-line: var(--color-line);
+  --color-line-soft: var(--color-line-soft);
+
+  --color-brand: var(--color-brand);
+  --color-brand-deep: var(--color-brand-deep);
+  --color-brand-light: var(--color-brand-light);
+  --color-marigold: var(--color-marigold);
+  --color-marigold-light: var(--color-marigold-light);
+
+  --color-status-pending: var(--color-status-pending);
+  --color-status-pending-bg: var(--color-status-pending-bg);
+  --color-status-active: var(--color-status-active);
+  --color-status-active-bg: var(--color-status-active-bg);
+  --color-status-danger: var(--color-status-danger);
+  --color-status-danger-bg: var(--color-status-danger-bg);
+  --color-status-neutral: var(--color-status-neutral);
+  --color-status-neutral-bg: var(--color-status-neutral-bg);
+
+  --font-sans: var(--font-mukta), "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--font-bitter), Georgia, serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--color-brand-light);
+  color: var(--color-brand-deep);
+}
+
+/* Tailwind's preflight zeroes out margin on every element, which breaks
+   the browser's default auto-centering for <dialog>. Restore it so every
+   dialog in the app (RequestServiceDialog, ManageBookingDialog, ...)
+   opens centered instead of pinned to the top-left corner. */
+dialog {
+  margin: auto;
+  max-height: calc(100vh - 3rem);
+}

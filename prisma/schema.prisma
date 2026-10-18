@@ -1,0 +1,268 @@
+// Kheti Sehat — data model
+// Rebuilt from the Bubble prototype: farmer marketplace, provider/coordinator
+// dashboards, and the payment module (see docs/payment-module.md).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  // native for local dev, rhel for Netlify's Lambda runtime
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- enums ----------
+
+enum Role {
+  FARMER
+  PROVIDER
+  COORDINATOR
+  ADMIN
+}
+
+enum Section {
+  AGRI
+  HEALTH
+}
+
+enum AgriCategory {
+  DRONE_SERVICES
+  EQUIPMENT_RENTAL
+  AGRONOMIST
+  SOIL_TESTING
+  SOLAR_SERVICES
+}
+
+enum HealthCategory {
+  DOCTOR
+  NURSE
+  PHARMACY
+  PATHOLOGY_LAB
+  PHYSIOTHERAPIST
+  AMBULANCE
+}
+
+enum AyushmanStatus {
+  EMPANELLED
+  NOT_EMPANELLED
+  UNKNOWN
+}
+
+enum HospitalType {
+  GOVERNMENT
+  PRIVATE
+  CHC
+  PHC
+  CLINIC
+}
+
+// The booking lifecycle from the payment-module concept note:
+// PENDING -> AWAITING_PAYMENT -> READY_TO_START -> IN_PROGRESS
+// -> PROVIDER_COMPLETED -> CONFIRMED -> SETTLED
+// with CANCELLED / DISPUTED as side branches.
+enum BookingStatus {
+  PENDING
+  AWAITING_PAYMENT
+  READY_TO_START
+  IN_PROGRESS
+  PROVIDER_COMPLETED
+  CONFIRMED
+  SETTLED
+  CANCELLED
+  DISPUTED
+}
+
+// Mirrors "Booking status vs money status" from the concept note.
+enum EscrowStatus {
+  UNPAID
+  HELD
+  RELEASED
+  REFUNDED
+  FROZEN
+  PARTIAL
+}
+
+enum NotificationType {
+  BOOKING_CREATED
+  BOOKING_ASSIGNED
+  STATUS_CHANGED
+  PAYMENT_HELD
+  PAYMENT_RELEASED
+  RATING_RECEIVED
+  VERIFICATION_UPDATE
+  GENERAL
+}
+
+// ---------- models ----------
+
+model User {
+  id           String   @id @default(cuid()) @map("_id")
+  name         String
+  // Unique only when set — enforced by partial indexes in prisma/mongo-indexes.ts,
+  // since a Prisma @unique on MongoDB would also count missing values as duplicates.
+  email        String?
+  phone        String?
+  passwordHash String
+  role         Role
+  active       Boolean  @default(true) // admins can disable an account without deleting it
+  createdAt    DateTime @default(now())
+
+  providerProfile ProviderProfile?
+  bookings        Booking[]             @relation("FarmerBookings")
+  ratingsGiven    Rating[]              @relation("RatingsGiven")
+  notifications   Notification[]
+  resetTokens     PasswordResetToken[]
+}
+
+model ProviderProfile {
+  id             String          @id @default(cuid()) @map("_id")
+  userId         String          @unique
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section        Section
+  agriCategory   AgriCategory?
+  healthCategory HealthCategory?
+  displayName    String
+  bio            String?
+  location       String
+  district       String?
+  phone          String
+  availability   String?
+  ayushmanStatus AyushmanStatus?
+  photoUrl       String?
+  verified       Boolean         @default(true)
+  commissionRate Float           @default(10)
+  ratingAvg      Float           @default(0)
+  ratingCount    Int             @default(0)
+
+  // Where the admin sends this provider's payouts (bank transfer or UPI).
+  // See docs/payment-module.md.
+  bankAccountNumber String?
+  bankIfsc          String?
+  upiId             String?
+  panNumber         String?
+  payoutKycComplete Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  bookings Booking[] @relation("ProviderBookings")
+  ratings  Rating[]  @relation("ProviderRatings")
+
+  @@index([section, agriCategory])
+  @@index([section, healthCategory])
+}
+
+model Hospital {
+  id             String         @id @default(cuid()) @map("_id")
+  name           String
+  type           HospitalType
+  district       String
+  ayushmanStatus AyushmanStatus
+  departments    String // comma-separated, kept as a plain string across the sqlite→postgres→mongodb moves
+  phone          String
+  emergencyReady Boolean        @default(false)
+  photoUrl       String? // shown at the top of the hospital's card
+  createdAt      DateTime       @default(now())
+
+  @@index([district, type])
+}
+
+model Booking {
+  id             String          @id @default(cuid()) @map("_id")
+  farmerId       String
+  farmer         User            @relation("FarmerBookings", fields: [farmerId], references: [id])
+  providerId     String?
+  provider       ProviderProfile? @relation("ProviderBookings", fields: [providerId], references: [id])
+
+  section        Section
+  agriCategory   AgriCategory?
+  healthCategory HealthCategory?
+  description    String
+  preferredDate  DateTime?
+  ayushmanCard   AyushmanStatus? // the requester's card status, health only
+
+  status       BookingStatus @default(PENDING)
+  escrowStatus EscrowStatus  @default(UNPAID)
+
+  // Payment ledger — see docs/payment-module.md ("The fee"). `escrowStatus`
+  // tracks where the money is: UNPAID → HELD (in the Kheti Sehat Razorpay
+  // account) → RELEASED (admin has paid the provider) / REFUNDED.
+  serviceAmount  Int? // whole rupees
+  commissionRate Float?
+  platformFee    Int?
+  providerNet    Int?
+
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+
+  // Recorded by the admin when they pay the provider manually.
+  payoutMethod    String? // UPI | BANK_TRANSFER | OTHER
+  payoutReference String? // UTR / UPI transaction id
+  payoutById      String? // admin user id
+
+  paidAt              DateTime?
+  providerCompletedAt DateTime?
+  autoReleaseDueAt    DateTime?
+  confirmedAt         DateTime?
+  releasedAt          DateTime?
+
+  cancelledAt        DateTime?
+  cancellationReason String?
+  disputeReason      String?
+  coordinatorNotes   String?
+
+  // Powers the coordinator's "AI WhatsApp to Booking" intake tool.
+  aiExtracted   Boolean @default(false)
+  aiConfidence  String? // JSON: { field: "high" | "medium" | "low" }
+  sourceMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rating        Rating?
+  notifications Notification[]
+
+  @@index([status])
+  @@index([farmerId])
+  @@index([providerId])
+}
+
+model Rating {
+  id         String          @id @default(cuid()) @map("_id")
+  bookingId  String          @unique
+  booking    Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  providerId String
+  provider   ProviderProfile @relation("ProviderRatings", fields: [providerId], references: [id])
+  farmerId   String
+  farmer     User            @relation("RatingsGiven", fields: [farmerId], references: [id])
+  stars      Int
+  comment    String?
+  createdAt  DateTime        @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid()) @map("_id")
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  bookingId String?
+  booking   Booking?         @relation(fields: [bookingId], references: [id])
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid()) @map("_id")
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
