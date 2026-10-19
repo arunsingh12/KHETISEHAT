@@ -1,6 +1,6 @@
 /**
- * Demo data mirroring the original Bubble prototype's provider directory,
- * hospital list, and a spread of bookings across the payment lifecycle so
+ * Demo data mirroring the original Bubble prototype's provider directory
+ * and a spread of bookings across the payment lifecycle so
  * every dashboard has something to look at on first run.
  *
  * Run with: npm run db:seed
@@ -8,7 +8,7 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { assignDemoHospitalPhotos, assignDemoPhotos } from "./demo-photos";
+import { assignDemoPhotos } from "./demo-photos";
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set — see .env.example");
 const prisma = new PrismaClient();
@@ -276,117 +276,6 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
   },
 ];
 
-const HOSPITALS = [
-  {
-    name: "District Government Hospital Gorakhpur",
-    type: "GOVERNMENT",
-    district: "Gorakhpur",
-    ayushmanStatus: "EMPANELLED",
-    departments: "General Medicine,Surgery,Orthopaedics,Gynaecology,Paediatrics,Emergency",
-    phone: "0551-2334455",
-    emergencyReady: true,
-  },
-  {
-    name: "Lifeline Multi-Speciality Hospital",
-    type: "PRIVATE",
-    district: "Maharajganj",
-    ayushmanStatus: "NOT_EMPANELLED",
-    departments: "General Medicine,Neurology,Oncology,Pulmonology",
-    phone: "9911223344",
-    emergencyReady: false,
-  },
-  {
-    name: "Sadar Government Hospital Deoria",
-    type: "GOVERNMENT",
-    district: "Deoria",
-    ayushmanStatus: "NOT_EMPANELLED",
-    departments: "General Medicine,Surgery,Gynaecology,Paediatrics",
-    phone: "05568-223344",
-    emergencyReady: false,
-  },
-  {
-    name: "Sunrise Private Hospital",
-    type: "PRIVATE",
-    district: "Kushinagar",
-    ayushmanStatus: "EMPANELLED",
-    departments: "General Medicine,Cardiology,Orthopaedics,ENT,Ophthalmology,Emergency",
-    phone: "9900112233",
-    emergencyReady: true,
-  },
-  {
-    name: "Kushinagar Community Health Centre",
-    type: "CHC",
-    district: "Kushinagar",
-    ayushmanStatus: "EMPANELLED",
-    departments: "General Medicine,Maternity,Paediatrics,Emergency",
-    phone: "05564-234567",
-    emergencyReady: true,
-  },
-  {
-    name: "Maharajganj Community Health Centre",
-    type: "CHC",
-    district: "Maharajganj",
-    ayushmanStatus: "UNKNOWN",
-    departments: "General Medicine,Maternity,Paediatrics",
-    phone: "05522-345678",
-    emergencyReady: false,
-  },
-  {
-    name: "Barhaj Primary Health Centre",
-    type: "PHC",
-    district: "Deoria",
-    ayushmanStatus: "UNKNOWN",
-    departments: "General Medicine,Primary Care",
-    phone: "9933445566",
-    emergencyReady: false,
-  },
-  {
-    name: "Ramkola Primary Health Centre",
-    type: "PHC",
-    district: "Kushinagar",
-    ayushmanStatus: "NOT_EMPANELLED",
-    departments: "General Medicine,Maternity",
-    phone: "9922334455",
-    emergencyReady: false,
-  },
-  {
-    name: "Shanti Clinic",
-    type: "CLINIC",
-    district: "Gorakhpur",
-    ayushmanStatus: "NOT_EMPANELLED",
-    departments: "General Medicine,Dermatology",
-    phone: "9944556677",
-    emergencyReady: false,
-  },
-  {
-    name: "Padrauna Government Hospital",
-    type: "GOVERNMENT",
-    district: "Kushinagar",
-    ayushmanStatus: "EMPANELLED",
-    departments: "General Medicine,Surgery,Paediatrics,Emergency",
-    phone: "05564-876543",
-    emergencyReady: true,
-  },
-  {
-    name: "Arogya Clinic",
-    type: "CLINIC",
-    district: "Varanasi",
-    ayushmanStatus: "UNKNOWN",
-    departments: "General Medicine,Dental",
-    phone: "9955667788",
-    emergencyReady: false,
-  },
-  {
-    name: "New Life Private Hospital",
-    type: "PRIVATE",
-    district: "Gorakhpur",
-    ayushmanStatus: "EMPANELLED",
-    departments: "General Medicine,Cardiology,Orthopaedics,Emergency",
-    phone: "9966778899",
-    emergencyReady: true,
-  },
-] as const;
-
 async function main() {
   console.log("Seeding admin, coordinator, farmer and providers…");
 
@@ -435,12 +324,6 @@ async function main() {
       },
     });
     providerRows.push(profile);
-  }
-
-  console.log("Seeding hospitals…");
-  for (const h of HOSPITALS) {
-    const existing = await prisma.hospital.findFirst({ where: { name: h.name } });
-    if (!existing) await prisma.hospital.create({ data: h });
   }
 
   console.log("Seeding sample bookings across the payment lifecycle…");
@@ -568,7 +451,6 @@ async function main() {
 
   console.log("Adding demo provider photos…");
   await assignDemoPhotos(prisma);
-  await assignDemoHospitalPhotos(prisma);
 
   console.log("Done.");
 }

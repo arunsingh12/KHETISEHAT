@@ -3,7 +3,6 @@ import type {
   AgriCategory,
   AyushmanStatus,
   HealthCategory,
-  HospitalType,
   Role,
 } from "@/generated/prisma/enums";
 
@@ -35,21 +34,6 @@ export function listHealthProviders(filters: {
       ...(filters.ayushman ? { ayushmanStatus: filters.ayushman } : {}),
     },
     orderBy: { ratingAvg: "desc" },
-  });
-}
-
-export function listHospitals(filters: {
-  district?: string;
-  type?: HospitalType;
-  ayushman?: AyushmanStatus;
-}) {
-  return prisma.hospital.findMany({
-    where: {
-      ...(filters.district ? { district: filters.district } : {}),
-      ...(filters.type ? { type: filters.type } : {}),
-      ...(filters.ayushman ? { ayushmanStatus: filters.ayushman } : {}),
-    },
-    orderBy: { name: "asc" },
   });
 }
 
@@ -89,7 +73,9 @@ export function getCoordinatorBookings(filters: { status?: string; section?: str
 
 export function getCancelledAndDisputedBookings() {
   return prisma.booking.findMany({
-    where: { status: { in: ["CANCELLED", "DISPUTED"] } },
+    // Plus refund requests already decided with a partial (or no) refund —
+    // those move on to payout instead of being cancelled.
+    where: { OR: [{ status: { in: ["CANCELLED", "DISPUTED"] } }, { refundPercent: { gte: 0 } }] },
     include: { farmer: true, provider: true, rating: true },
     orderBy: { updatedAt: "desc" },
   });
@@ -228,8 +214,4 @@ export async function getPlatformStats() {
     unverifiedCount,
     awaitingApprovalCount,
   };
-}
-
-export function getHospital(id: string) {
-  return prisma.hospital.findUnique({ where: { id } });
 }

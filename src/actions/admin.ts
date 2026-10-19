@@ -1,17 +1,50 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/authz";
 import { markPayoutPaid, PayoutNotPendingError } from "@/lib/escrow";
 import {
-  hospitalSchema,
+  createCoordinatorSchema,
   setCommissionRateSchema,
   markPayoutPaidSchema,
   updateUserRoleSchema,
 } from "@/lib/validation";
 import type { ActionResult } from "@/lib/types";
+
+/**
+ * Coordinators can't self-register (see PUBLIC_REGISTRATION_ROLES), so the
+ * admin creates their login here; they then land on /coordinator.
+ */
+export async function createCoordinatorAction(
+  _prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireSession(["ADMIN"]);
+  const parsed = createCoordinatorSchema.safeParse({
+    name: formData.get("name"),
+    identifier: formData.get("identifier"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form and try again" };
+  }
+  const { name, email, phone, password } = parsed.data;
+
+  const existing = await prisma.user.findFirst({
+    where: { OR: [email ? { email } : undefined, phone ? { phone } : undefined].filter(Boolean) as never },
+  });
+  if (existing) {
+    return { ok: false, error: "An account with that phone/email already exists" };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.user.create({ data: { name, email, phone, passwordHash, role: "COORDINATOR" } });
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
 
 /** Promote/demote a user between Farmer, Provider, Coordinator, Admin. */
 export async function updateUserRoleAction(
@@ -102,46 +135,4 @@ export async function setProviderCommissionAction(
   revalidatePath("/admin/providers");
   revalidatePath("/coordinator/payouts");
   return { ok: true };
-}
-
-export async function createHospitalAction(
-  _prevState: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  await requireSession(["ADMIN"]);
-  const parsed = hospitalSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form and try again" };
-  }
-
-  await prisma.hospital.create({ data: parsed.data });
-  revalidatePath("/admin/hospitals");
-  revalidatePath("/hospitals");
-  return { ok: true };
-}
-
-export async function updateHospitalAction(
-  _prevState: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  await requireSession(["ADMIN"]);
-  const id = String(formData.get("id") ?? "");
-  const parsed = hospitalSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!id || !parsed.success) {
-    return { ok: false, error: parsed.success ? "Missing hospital id" : parsed.error.issues[0]?.message };
-  }
-
-  await prisma.hospital.update({ where: { id }, data: parsed.data });
-  revalidatePath("/admin/hospitals");
-  revalidatePath("/hospitals");
-  return { ok: true };
-}
-
-/** Fire-and-forget — plain `<form action>` with a confirm() on the client. */
-export async function deleteHospitalAction(formData: FormData): Promise<void> {
-  await requireSession(["ADMIN"]);
-  const id = String(formData.get("id") ?? "");
-  await prisma.hospital.delete({ where: { id } });
-  revalidatePath("/admin/hospitals");
-  revalidatePath("/hospitals");
 }

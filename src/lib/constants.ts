@@ -4,7 +4,6 @@ import {
   BookingStatus,
   EscrowStatus,
   HealthCategory,
-  HospitalType,
   Role,
   Section,
 } from "@/generated/prisma/enums";
@@ -24,11 +23,11 @@ export const DASHBOARD_BY_ROLE: Record<Role, string> = {
 };
 
 /**
- * Roles selectable at public sign-up. Admin is provisioned directly
- * (seeded, or promoted by an existing admin from /admin/users) rather
- * than self-registered — see the README, "Roles & dashboards".
+ * Roles selectable at public sign-up. Admin and Coordinator are provisioned
+ * directly (seeded, or promoted by an existing admin from /admin/users)
+ * rather than self-registered — see the README, "Roles & dashboards".
  */
-export const PUBLIC_REGISTRATION_ROLES: Role[] = ["FARMER", "PROVIDER", "COORDINATOR"];
+export const PUBLIC_REGISTRATION_ROLES: Role[] = ["FARMER", "PROVIDER"];
 
 export const SECTION_LABELS: Record<Section, string> = {
   AGRI: "Agri Services",
@@ -58,24 +57,17 @@ export const AYUSHMAN_LABELS: Record<AyushmanStatus, string> = {
   UNKNOWN: "Unknown",
 };
 
-export const HOSPITAL_TYPE_LABELS: Record<HospitalType, string> = {
-  GOVERNMENT: "Government Hospital",
-  PRIVATE: "Private Hospital",
-  CHC: "Community Health Centre",
-  PHC: "Primary Health Centre",
-  CLINIC: "Clinic",
-};
-
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   PENDING: "Pending",
   AWAITING_PAYMENT: "Awaiting Payment",
   READY_TO_START: "Ready to Start",
   IN_PROGRESS: "In Progress",
   PROVIDER_COMPLETED: "Awaiting Your Confirmation",
+  CONCERN_RAISED: "Concern Raised · Provider Fixing",
   CONFIRMED: "Confirmed · Payout Pending",
   SETTLED: "Settled",
   CANCELLED: "Cancelled",
-  DISPUTED: "Disputed",
+  DISPUTED: "Refund Requested",
 };
 
 export const ESCROW_STATUS_LABELS: Record<EscrowStatus, string> = {
@@ -83,7 +75,7 @@ export const ESCROW_STATUS_LABELS: Record<EscrowStatus, string> = {
   HELD: "Paid to Kheti Sehat",
   RELEASED: "Paid to Provider",
   REFUNDED: "Refunded",
-  FROZEN: "On Hold (Disputed)",
+  FROZEN: "On Hold (Refund Request)",
   PARTIAL: "Partially Paid",
 };
 
@@ -94,14 +86,6 @@ export const PAYOUT_METHODS = {
   OTHER: "Other",
 } as const;
 export type PayoutMethod = keyof typeof PAYOUT_METHODS;
-
-export const DISTRICTS = [
-  "Gorakhpur",
-  "Maharajganj",
-  "Deoria",
-  "Kushinagar",
-  "Varanasi",
-] as const;
 
 /** Hours a completed booking waits for the farmer before it is auto-confirmed (payout still needs admin approval). */
 export const AUTO_CONFIRM_HOURS = 72;

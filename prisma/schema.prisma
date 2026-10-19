@@ -51,14 +51,6 @@ enum AyushmanStatus {
   UNKNOWN
 }
 
-enum HospitalType {
-  GOVERNMENT
-  PRIVATE
-  CHC
-  PHC
-  CLINIC
-}
-
 // The booking lifecycle from the payment-module concept note:
 // PENDING -> AWAITING_PAYMENT -> READY_TO_START -> IN_PROGRESS
 // -> PROVIDER_COMPLETED -> CONFIRMED -> SETTLED
@@ -69,10 +61,11 @@ enum BookingStatus {
   READY_TO_START
   IN_PROGRESS
   PROVIDER_COMPLETED
+  CONCERN_RAISED // farmer asked the provider to fix the work — provider resubmits
   CONFIRMED
   SETTLED
   CANCELLED
-  DISPUTED
+  DISPUTED // farmer requested a refund — a coordinator decides the split
 }
 
 // Mirrors "Booking status vs money status" from the concept note.
@@ -154,21 +147,6 @@ model ProviderProfile {
   @@index([section, healthCategory])
 }
 
-model Hospital {
-  id             String         @id @default(cuid()) @map("_id")
-  name           String
-  type           HospitalType
-  district       String
-  ayushmanStatus AyushmanStatus
-  departments    String // comma-separated, kept as a plain string across the sqlite→postgres→mongodb moves
-  phone          String
-  emergencyReady Boolean        @default(false)
-  photoUrl       String? // shown at the top of the hospital's card
-  createdAt      DateTime       @default(now())
-
-  @@index([district, type])
-}
-
 model Booking {
   id             String          @id @default(cuid()) @map("_id")
   farmerId       String
@@ -210,8 +188,19 @@ model Booking {
 
   cancelledAt        DateTime?
   cancellationReason String?
-  disputeReason      String?
+  disputeReason      String? // the farmer's refund request
   coordinatorNotes   String?
+
+  // "Raise Concern" loop between farmer and provider (no coordinator).
+  concernReason    String? // latest concern from the farmer
+  concernCount     Int     @default(0)
+  resubmissionNote String? // provider's note when resubmitting the work
+
+  // Coordinator's decision on a refund request (DISPUTED).
+  refundPercent   Int? // 0–100 of serviceAmount returned to the farmer
+  refundAmount    Int? // whole rupees refunded to the farmer
+  resolutionNotes String?
+  resolvedAt      DateTime?
 
   // Powers the coordinator's "AI WhatsApp to Booking" intake tool.
   aiExtracted   Boolean @default(false)

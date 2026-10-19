@@ -5,7 +5,11 @@ import { ActionForm } from "@/components/ui/ActionForm";
 import { inputClass, labelClass } from "@/lib/ui";
 import { PUBLIC_REGISTRATION_ROLES, ROLE_LABELS } from "@/lib/constants";
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ role?: string }> }) {
+  // The home page's "Sign up as a farmer / provider" buttons preselect the role.
+  const { role } = await searchParams;
+  const defaultRole = PUBLIC_REGISTRATION_ROLES.find((r) => r === role) ?? "";
+
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12 sm:px-6">
       <div className="rounded-xl border border-line bg-surface p-6 shadow-sm">
@@ -24,7 +28,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <label className={labelClass}>I am a</label>
-            <select name="role" required defaultValue="" className={inputClass}>
+            <select name="role" required defaultValue={defaultRole} className={inputClass}>
               <option value="" disabled>
                 Choose an option…
               </option>

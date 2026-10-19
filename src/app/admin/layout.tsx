@@ -16,7 +16,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           items: [
             { href: "/admin/users", label: "Users" },
             { href: "/admin/providers", label: "Providers" },
-            { href: "/admin/hospitals", label: "Hospitals" },
             { href: "/admin/bookings", label: "All Bookings" },
             { href: "/admin/payouts", label: "Payouts", badge: payoutsWaiting },
           ],

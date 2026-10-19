@@ -7,12 +7,11 @@ import { BookingStatusBadge } from "@/components/ui/Badge";
 import { AGRI_CATEGORY_LABELS, HEALTH_CATEGORY_LABELS, SECTION_LABELS } from "@/lib/constants";
 import { formatDate, formatRupees, timeAgo } from "@/lib/format";
 
-const ACTIVE = new Set(["PENDING", "AWAITING_PAYMENT", "READY_TO_START", "IN_PROGRESS", "PROVIDER_COMPLETED"]);
+const ACTIVE = new Set(["PENDING", "AWAITING_PAYMENT", "READY_TO_START", "IN_PROGRESS", "PROVIDER_COMPLETED", "CONCERN_RAISED"]);
 
 const QUICK_LINKS = [
   { href: "/agri-services", title: "Agri Services", hindi: "कृषि सेवाएं", body: "Drones, equipment, soil testing, agronomists, solar." },
   { href: "/health-services", title: "Health Services", hindi: "स्वास्थ्य सेवाएं", body: "Doctors, nurses, labs, pharmacy, ambulance." },
-  { href: "/hospitals", title: "Hospitals", hindi: "अस्पताल", body: "Nearby hospitals and Ayushman Bharat empanelment." },
 ];
 
 export default async function FarmerHomePage() {
@@ -69,7 +68,7 @@ export default async function FarmerHomePage() {
 
       <section className="mt-8">
         <h2 className="font-display text-lg font-semibold">Request a service</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {QUICK_LINKS.map((link) => (
             <Link
               key={link.href}

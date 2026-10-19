@@ -10,12 +10,19 @@ import {
   cancelBooking as cancelBookingEscrow,
   confirmWorkDone,
   providerMarksComplete,
-  raiseDispute,
-  resolveDispute,
+  raiseConcern,
+  requestRefund,
+  resolveRefund,
+  resubmitWork,
   runAutoConfirm,
   setServiceAmount,
 } from "@/lib/escrow";
-import { cancelBookingSchema, createBookingSchema, manageBookingSchema } from "@/lib/validation";
+import {
+  cancelBookingSchema,
+  createBookingSchema,
+  manageBookingSchema,
+  resolveRefundSchema,
+} from "@/lib/validation";
 import type { ActionResult } from "@/lib/types";
 
 type SessionUser = Awaited<ReturnType<typeof requireSession>>;
@@ -199,24 +206,70 @@ export async function confirmBookingDone(_prevState: ActionResult | null, formDa
   return { ok: true };
 }
 
-/** Farmer disputes a job the provider marked complete, instead of confirming it. */
-export async function disputeBookingAction(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+/** Farmer sends a completed job back to the provider to fix — no coordinator involved. */
+export async function raiseConcernAction(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const user = await requireSession(["FARMER"]);
   const bookingId = String(formData.get("bookingId") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
-  if (!reason) return { ok: false, error: "Explain what went wrong" };
+  if (!reason) return { ok: false, error: "Explain what needs fixing" };
 
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
   if (!booking || booking.farmerId !== user.id) {
     return { ok: false, error: "Booking not found" };
   }
-  if (booking.status !== "PROVIDER_COMPLETED") {
-    return { ok: false, error: "Only a booking awaiting your confirmation can be disputed" };
+
+  try {
+    await raiseConcern(bookingId, reason);
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Could not raise the concern" };
+  }
+  revalidatePath("/farmer", "layout");
+  revalidatePath("/provider");
+  revalidatePath("/coordinator");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/** Provider has fixed the work after a concern and sends it back for confirmation. */
+export async function resubmitWorkAction(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const user = await requireSession(["PROVIDER", "COORDINATOR", "ADMIN"]);
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const note = String(formData.get("note") ?? "").trim();
+
+  if (!(await loadBookingFor(user, bookingId))) return { ok: false, error: "Booking not found" };
+
+  try {
+    await resubmitWork(bookingId, note);
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Could not resubmit the work" };
+  }
+  revalidatePath("/farmer", "layout");
+  revalidatePath("/provider");
+  revalidatePath("/coordinator");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/** Farmer asks for money back — freezes the payment and goes to the coordinators. */
+export async function requestRefundAction(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const user = await requireSession(["FARMER"]);
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) return { ok: false, error: "Explain why you want a refund" };
+
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+  if (!booking || booking.farmerId !== user.id) {
+    return { ok: false, error: "Booking not found" };
   }
 
-  await raiseDispute(bookingId, reason);
+  try {
+    await requestRefund(bookingId, reason);
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Could not request a refund" };
+  }
   revalidatePath("/farmer", "layout");
-  revalidatePath("/coordinator");
+  revalidatePath("/provider");
+  revalidatePath("/coordinator", "layout");
   revalidatePath("/admin");
   return { ok: true };
 }
@@ -259,16 +312,22 @@ export async function runAutoConfirmAction(): Promise<ActionResult & { confirmed
   return { ok: true, confirmed: result.confirmed };
 }
 
-export async function resolveDisputeAction(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+/** Coordinator decides what % of the payment goes back to the farmer; the rest goes to the provider. */
+export async function resolveRefundAction(_prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   await requireSession(["COORDINATOR", "ADMIN"]);
-  const bookingId = String(formData.get("bookingId") ?? "");
-  const outcome = formData.get("outcome") === "refund" ? "refund" : "release";
-  const reason = String(formData.get("reason") ?? "");
+  const parsed = resolveRefundSchema.safeParse({
+    bookingId: formData.get("bookingId"),
+    refundPercent: formData.get("refundPercent"),
+    notes: formData.get("notes") ?? "",
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form and try again" };
+  }
 
   try {
-    await resolveDispute(bookingId, outcome, reason);
+    await resolveRefund(parsed.data.bookingId, parsed.data.refundPercent, parsed.data.notes);
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Could not resolve dispute" };
+    return { ok: false, error: error instanceof Error ? error.message : "Could not resolve the refund request" };
   }
 
   revalidatePath("/coordinator");

@@ -24,7 +24,9 @@ export default async function ProviderHomePage({
   );
 
   const pending = allBookings.filter((b) => b.status === "PENDING" || b.status === "AWAITING_PAYMENT").length;
-  const active = allBookings.filter((b) => b.status === "READY_TO_START" || b.status === "IN_PROGRESS").length;
+  const active = allBookings.filter(
+    (b) => b.status === "READY_TO_START" || b.status === "IN_PROGRESS" || b.status === "CONCERN_RAISED",
+  ).length;
   const thisMonth = new Date();
   thisMonth.setDate(1);
   const earnings = allBookings

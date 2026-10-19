@@ -23,6 +23,12 @@ export type BookingDetail = {
   cancellationReason: string | null;
   coordinatorNotes: string | null;
   disputeReason: string | null;
+  concernReason: string | null;
+  concernCount: number;
+  resubmissionNote: string | null;
+  refundPercent: number | null;
+  refundAmount: number | null;
+  resolutionNotes: string | null;
 };
 
 export function BookingDetailDialog({ booking }: { booking: BookingDetail }) {
@@ -71,7 +77,19 @@ export function BookingDetailDialog({ booking }: { booking: BookingDetail }) {
             {booking.cancellationReason && (
               <Row label="Cancellation reason">{booking.cancellationReason}</Row>
             )}
-            {booking.disputeReason && <Row label="Dispute reason">{booking.disputeReason}</Row>}
+            {booking.concernReason && (
+              <Row label={booking.concernCount > 1 ? `Latest concern (${booking.concernCount} raised)` : "Concern"}>
+                {booking.concernReason}
+              </Row>
+            )}
+            {booking.resubmissionNote && <Row label="Provider's fix">{booking.resubmissionNote}</Row>}
+            {booking.disputeReason && <Row label="Refund request">{booking.disputeReason}</Row>}
+            {booking.refundPercent != null && (
+              <Row label="Refund decision">
+                {booking.refundPercent}% · {formatRupees(booking.refundAmount)} to the farmer
+              </Row>
+            )}
+            {booking.resolutionNotes && <Row label="Coordinator's notes">{booking.resolutionNotes}</Row>}
             {booking.coordinatorNotes && <Row label="Notes">{booking.coordinatorNotes}</Row>}
           </dl>
         </div>

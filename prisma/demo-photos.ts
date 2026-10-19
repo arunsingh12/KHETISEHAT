@@ -1,5 +1,5 @@
 /**
- * Placeholder provider and hospital photos for the demo directory — free Unsplash photos
+ * Placeholder provider photos for the demo directory — free Unsplash photos
  * (Unsplash License), hotlinked from images.unsplash.com and matched to each
  * provider's service. Only fills providers that have no photo yet, so a
  * photo a provider sets in Account Settings is never overwritten.
@@ -82,29 +82,6 @@ const PHOTOS: Record<string, string[]> = {
 
 const FALLBACK = ["photo-1500382017468-9049fed747ef"]; // farm fields
 
-const HOSPITAL_BUILDINGS = [
-  "photo-1586773860418-d37222d8fce3",
-  "photo-1519494026892-80bbd2d6fd0d",
-  "photo-1479839672679-a46483c0e7c8",
-  "photo-1538108149393-fbbd81895907",
-  "photo-1481026469463-66327c86e544",
-  "photo-1626315869436-d6781ba69d6e",
-  "photo-1517120026326-d87759a7b63b",
-  "photo-1764885517847-79d62138cc58",
-  "photo-1764191958529-a724ead97ad9",
-  "photo-1764885449332-7eb941d53b7e",
-  "photo-1512678080530-7760d81faba6",
-  "photo-1516574187841-cb9cc2ca948b",
-  "photo-1710074213379-2a9c2653046a",
-  "photo-1614101062781-09a8dfb90dce",
-];
-const CLINICS = [
-  "photo-1631248055158-edec7a3c072b",
-  "photo-1629909613654-28e377c37b09",
-  "photo-1505751172876-fa1923c5c528",
-  "photo-1762625570087-6d98fca29531",
-];
-
 function photoUrl(id: string) {
   return `https://images.unsplash.com/${id}?w=800&h=500&fit=crop&auto=format&q=70`;
 }
@@ -130,26 +107,11 @@ export async function assignDemoPhotos(prisma: PrismaClient) {
   return providers.length;
 }
 
-export async function assignDemoHospitalPhotos(prisma: PrismaClient) {
-  const hospitals = await prisma.hospital.findMany({
-    where: { OR: [{ photoUrl: { isSet: false } }, { photoUrl: null }, { photoUrl: "" }] },
-    orderBy: { createdAt: "asc" },
-  });
-
-  let building = 0;
-  let clinic = 0;
-  for (const h of hospitals) {
-    const id = h.type === "CLINIC" ? CLINICS[clinic++ % CLINICS.length] : HOSPITAL_BUILDINGS[building++ % HOSPITAL_BUILDINGS.length];
-    await prisma.hospital.update({ where: { id: h.id }, data: { photoUrl: photoUrl(id) } });
-  }
-  return hospitals.length;
-}
-
 // Run directly (npm run db:demo-photos), not when imported by the seed.
 if (process.argv[1]?.endsWith("demo-photos.ts")) {
   const prisma = new PrismaClient();
-  Promise.all([assignDemoPhotos(prisma), assignDemoHospitalPhotos(prisma)])
-    .then(([p, h]) => console.log(`Added demo photos to ${p} provider(s) and ${h} hospital(s).`))
+  assignDemoPhotos(prisma)
+    .then((p) => console.log(`Added demo photos to ${p} provider(s).`))
     .catch((e) => {
       console.error(e);
       process.exit(1);

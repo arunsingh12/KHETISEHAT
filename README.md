@@ -23,7 +23,7 @@ name in the URL, e.g. `mongodb+srv://user:pass@cluster.mongodb.net/khetisehat?ap
 npm install
 cp .env.example .env        # then fill in DATABASE_URL and AUTH_SECRET
 npm run db:push             # creates collections + indexes in MongoDB
-npm run db:seed             # demo providers, hospitals, and sample bookings
+npm run db:seed             # demo providers and sample bookings
 npm run dev
 ```
 
@@ -48,7 +48,7 @@ All seeded accounts use the password `password123`.
 | Provider | `9812341234` | Kavita Gupta, Doctor (Health) |
 
 The seed script creates ~19 providers total across every Agri/Health category
-(mirroring the original prototype's directory), 12 hospitals, and a handful
+(mirroring the original prototype's directory) and a handful
 of bookings spanning Pending → Awaiting Payment → Paid to Kheti Sehat → Awaiting
 Confirmation → Settled → Cancelled, so every dashboard has something to look
 at immediately.
@@ -57,15 +57,15 @@ at immediately.
 
 | Role | Lands at | What they can do |
 |---|---|---|
-| **Farmer** (requester) | `/farmer` | Dashboard of bookings, payments and updates; browse Agri/Health directories and Hospitals, request a service, pay, confirm work done or dispute it, rate the provider |
+| **Farmer** (requester) | `/farmer` | Dashboard of bookings, payments and updates; browse Agri/Health directories, request a service, pay, confirm work done, raise a concern with the provider, or request a refund, rate the provider |
 | **Provider** | `/provider` | See their own request queue, set a price, update status, view **My Payouts**, edit their profile + payout details (UPI / bank account) |
-| **Coordinator** | `/coordinator` | Everything a provider can manage, plus: AI WhatsApp intake, provider verification, cancellations/disputes, the payout ledger, and provider listings |
-| **Admin** | `/admin` | Platform-wide visibility: manage every user's role and active/disabled status, verify providers and set their commission rate, **pay providers and record payouts** (`/admin/payouts`), full CRUD on the hospital directory, every booking on the platform, and read-only integration status (Razorpay/Anthropic configured or simulated) |
+| **Coordinator** | `/coordinator` | Everything a provider can manage, plus: AI WhatsApp intake, provider verification, refund requests (decides the refund %) and cancellations, the payout ledger, and provider listings |
+| **Admin** | `/admin` | Platform-wide visibility: manage every user's role and active/disabled status, verify providers and set their commission rate, **pay providers and record payouts** (`/admin/payouts`), every booking on the platform, and read-only integration status (Razorpay/Anthropic configured or simulated) |
 
 A disabled user (`User.active = false`, toggled from `/admin/users`) is rejected at login with the same generic error as a wrong password — it doesn't reveal that the account exists.
 
-Public sign-up at `/register` only offers Farmer, Provider, and Coordinator
-(`PUBLIC_REGISTRATION_ROLES` in `src/lib/constants.ts`) — Admin is provisioned
+Public sign-up at `/register` only offers Farmer and Provider
+(`PUBLIC_REGISTRATION_ROLES` in `src/lib/constants.ts`) — Admin and Coordinator are provisioned
 directly (seeded, or promoted by an existing admin from `/admin/users`), not
 self-registered. This is enforced on the server in `registerSchema`
 (`src/lib/validation.ts`) as well as hidden from the dropdown, so a raw POST
@@ -93,7 +93,7 @@ To take real payments:
 3. Ask providers to fill in their UPI ID or bank account + IFSC under
    Account Settings — the Payouts page shows these to the admin.
 
-If the farmer neither confirms nor disputes within 72 hours of the provider
+If the farmer neither confirms, raises a concern, nor requests a refund within 72 hours of the provider
 marking the job complete, it is auto-confirmed — the admin still pays the
 provider as usual. The sweep runs two ways:
 
@@ -109,7 +109,7 @@ src/app/                  Routes (App Router). Public pages, auth pages, and
                            role-gated /provider, /coordinator and /admin
                            dashboards (each with its own layout.tsx guard).
 src/actions/               Server actions — one file per domain area
-src/lib/escrow.ts          The booking payment state machine (pay → confirm → admin payout / refund / dispute)
+src/lib/escrow.ts          The booking payment state machine (pay → confirm → admin payout / concern → resubmit / refund request)
 src/lib/payments/razorpay.ts  Razorpay Orders + refunds (with the simulated fallback)
 src/lib/ai/extractBooking.ts  AI WhatsApp-to-Booking extractor (Anthropic + heuristic fallback)
 src/lib/queries.ts          All Prisma read queries, one place per dashboard/page

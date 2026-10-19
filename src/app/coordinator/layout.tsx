@@ -18,7 +18,7 @@ export default async function CoordinatorLayout({ children }: { children: React.
         {
           title: "Operations",
           items: [
-            { href: "/coordinator/cancellations", label: "Cancel & Reschedule" },
+            { href: "/coordinator/cancellations", label: "Refunds & Cancellations" },
             { href: "/coordinator/payouts", label: "Monthly Payout" },
             { href: "/coordinator/listings", label: "Manage Listing" },
           ],

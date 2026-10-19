@@ -3,7 +3,6 @@ import {
   AgriCategory,
   AyushmanStatus,
   HealthCategory,
-  HospitalType,
   Role,
   Section,
 } from "@/generated/prisma/enums";
@@ -17,7 +16,6 @@ const sectionValues = Object.values(Section) as [Section, ...Section[]];
 const agriValues = Object.values(AgriCategory) as [AgriCategory, ...AgriCategory[]];
 const healthValues = Object.values(HealthCategory) as [HealthCategory, ...HealthCategory[]];
 const ayushmanValues = Object.values(AyushmanStatus) as [AyushmanStatus, ...AyushmanStatus[]];
-const hospitalTypeValues = Object.values(HospitalType) as [HospitalType, ...HospitalType[]];
 
 export const registerSchema = z
   .object({
@@ -25,6 +23,22 @@ export const registerSchema = z
     identifier: z.string().trim().min(3, "Enter a phone number or email"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     role: z.enum(publicRoleValues),
+  })
+  .transform((data) => {
+    const isEmail = data.identifier.includes("@");
+    return {
+      ...data,
+      email: isEmail ? data.identifier.toLowerCase() : undefined,
+      phone: isEmail ? undefined : data.identifier,
+    };
+  });
+
+/** Admin-created Coordinator account — the only way to get that role besides promotion. */
+export const createCoordinatorSchema = z
+  .object({
+    name: z.string().trim().min(2, "Enter the coordinator's full name"),
+    identifier: z.string().trim().min(3, "Enter a phone number or email"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
   })
   .transform((data) => {
     const isEmail = data.identifier.includes("@");
@@ -102,24 +116,19 @@ export const aiExtractSchema = z.object({
   message: z.string().trim().min(5, "Paste the WhatsApp message first"),
 });
 
-export const hospitalSchema = z.object({
-  name: z.string().trim().min(2, "Enter the hospital name"),
-  type: z.enum(hospitalTypeValues),
-  district: z.string().trim().min(2, "Enter a district"),
-  ayushmanStatus: z.enum(ayushmanValues),
-  departments: z.string().trim().min(2, "List at least one department"),
-  phone: z.string().trim().min(6, "Enter a contact number"),
-  emergencyReady: z.coerce.boolean().optional().default(false),
-  // Empty clears the photo.
-  photoUrl: z
-    .union([z.literal(""), z.url({ protocol: /^https?$/, error: "Photo link must start with http:// or https://" })])
-    .optional()
-    .transform((v) => v || null),
-});
-
 export const updateUserRoleSchema = z.object({
   userId: z.string().min(1),
   role: z.enum(roleValues),
+});
+
+export const resolveRefundSchema = z.object({
+  bookingId: z.string().min(1),
+  refundPercent: z.coerce
+    .number()
+    .int("Use a whole-number percentage")
+    .min(0, "Refund can't be below 0%")
+    .max(100, "Refund can't be above 100%"),
+  notes: z.string().trim().max(1000),
 });
 
 export const markPayoutPaidSchema = z.object({

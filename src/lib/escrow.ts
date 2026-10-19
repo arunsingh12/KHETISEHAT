@@ -131,7 +131,7 @@ export async function providerMarksComplete(bookingId: string) {
  */
 export async function confirmWorkDone(
   bookingId: string,
-  trigger: "requester_confirmed" | "auto_confirmed" | "dispute_resolved",
+  trigger: "requester_confirmed" | "auto_confirmed" | "dispute_resolved" | "refund_split",
 ) {
   const booking = await prisma.booking.findUniqueOrThrow({
     where: { id: bookingId },
@@ -149,7 +149,8 @@ export async function confirmWorkDone(
   const how = {
     requester_confirmed: "The farmer confirmed the work",
     auto_confirmed: `Auto-confirmed after ${AUTO_CONFIRM_HOURS} hours with no response from the farmer`,
-    dispute_resolved: "The dispute was resolved in the provider's favour",
+    dispute_resolved: "The refund request was resolved in the provider's favour",
+    refund_split: `The refund request was resolved — ${booking.refundPercent}% refunded to the farmer`,
   }[trigger];
 
   const admins = await prisma.user.findMany({ where: { role: "ADMIN", active: true } });
@@ -247,9 +248,9 @@ export async function cancelBooking(bookingId: string, reason: string) {
   }
 
   let escrowStatus = booking.escrowStatus;
-  // FROZEN (a disputed booking being refunded, via resolveDispute) is
-  // refundable the same way HELD is — the money is still sitting
-  // uncollected by the provider in both cases.
+  // FROZEN (a refund request) is refundable the same way HELD is — the
+  // money is still sitting uncollected by the provider in both cases. A
+  // 100% refund decision (resolveRefund) also lands here.
   if (
     (booking.escrowStatus === "HELD" || booking.escrowStatus === "FROZEN") &&
     booking.razorpayPaymentId &&
@@ -283,47 +284,192 @@ export async function cancelBooking(bookingId: string, reason: string) {
   return updated;
 }
 
-/** The farmer can dispute a completed job before payout — puts the payment on hold for a coordinator to resolve. */
-export async function raiseDispute(bookingId: string, reason: string) {
-  const booking = await prisma.booking.update({
-    where: { id: bookingId },
-    data: { status: "DISPUTED", escrowStatus: "FROZEN", disputeReason: reason },
+/**
+ * "Raise Concern" — the farmer isn't happy with the work and sends it back
+ * to the provider (not a coordinator). The money stays HELD and the
+ * auto-confirm timer stops until the provider resubmits.
+ */
+export async function raiseConcern(bookingId: string, reason: string) {
+  const result = await prisma.booking.updateMany({
+    where: { id: bookingId, status: "PROVIDER_COMPLETED", escrowStatus: "HELD" },
+    data: {
+      status: "CONCERN_RAISED",
+      concernReason: reason,
+      concernCount: { increment: 1 },
+      autoReleaseDueAt: null,
+    },
   });
+  if (result.count === 0) throw new Error("Only a job awaiting your confirmation can have a concern raised");
 
-  const coordinators = await prisma.user.findMany({ where: { role: "COORDINATOR" } });
-  await Promise.all(
-    coordinators.map((c) =>
-      notify({
-        userId: c.id,
-        type: "STATUS_CHANGED",
-        title: "Booking disputed",
-        message: reason,
-        bookingId,
-      }),
-    ),
-  );
-
+  const booking = await prisma.booking.findUniqueOrThrow({
+    where: { id: bookingId },
+    include: { provider: true },
+  });
+  if (booking.provider) {
+    await notify({
+      userId: booking.provider.userId,
+      type: "STATUS_CHANGED",
+      title: "The farmer raised a concern",
+      sms: true,
+      message: `${reason} — please check the work and resubmit it from your dashboard.`,
+      bookingId,
+    });
+  }
   return booking;
 }
 
-/** Coordinator resolving a dispute — the "release / refund / split" outcomes from the concept note. */
-export async function resolveDispute(
-  bookingId: string,
-  outcome: "release" | "refund",
-  reason: string,
-) {
+/** Provider fixed the work after a concern — back to the farmer to confirm, with a fresh timer. */
+export async function resubmitWork(bookingId: string, note: string) {
+  const dueAt = new Date(Date.now() + AUTO_CONFIRM_HOURS * 60 * 60 * 1000);
+  const result = await prisma.booking.updateMany({
+    where: { id: bookingId, status: "CONCERN_RAISED", escrowStatus: "HELD" },
+    data: {
+      status: "PROVIDER_COMPLETED",
+      providerCompletedAt: new Date(),
+      autoReleaseDueAt: dueAt,
+      resubmissionNote: note || null,
+    },
+  });
+  if (result.count === 0) throw new Error("Only a job with an open concern can be resubmitted");
+
+  await notify({
+    userId: (await prisma.booking.findUniqueOrThrow({ where: { id: bookingId } })).farmerId,
+    type: "STATUS_CHANGED",
+    title: "Provider resubmitted the work",
+    sms: true,
+    message: `${note ? `${note} — ` : ""}Please check and confirm the work, raise another concern, or request a refund. It will be confirmed automatically in ${AUTO_CONFIRM_HOURS} hours.`,
+    bookingId,
+  });
+}
+
+/**
+ * "Request Refund" — the farmer wants money back. The payment is frozen and
+ * a coordinator contacts both sides, then decides the split (resolveRefund).
+ */
+export async function requestRefund(bookingId: string, reason: string) {
+  const result = await prisma.booking.updateMany({
+    where: {
+      id: bookingId,
+      status: { in: ["PROVIDER_COMPLETED", "CONCERN_RAISED"] },
+      escrowStatus: "HELD",
+    },
+    data: { status: "DISPUTED", escrowStatus: "FROZEN", disputeReason: reason, autoReleaseDueAt: null },
+  });
+  if (result.count === 0) throw new Error("A refund can't be requested for this booking right now");
+
+  const booking = await prisma.booking.findUniqueOrThrow({
+    where: { id: bookingId },
+    include: { provider: true },
+  });
+  const coordinators = await prisma.user.findMany({ where: { role: "COORDINATOR", active: true } });
+  await Promise.all([
+    ...coordinators.map((c) =>
+      notify({
+        userId: c.id,
+        type: "STATUS_CHANGED",
+        title: "Refund requested",
+        sms: true,
+        message: `${reason} — contact the farmer and provider, then decide the refund under Refunds & Cancellations.`,
+        bookingId,
+      }),
+    ),
+    booking.provider
+      ? notify({
+          userId: booking.provider.userId,
+          type: "STATUS_CHANGED",
+          title: "Refund requested",
+          message: "The farmer asked for a refund. The payment is on hold — a Kheti Sehat coordinator will contact you.",
+          bookingId,
+        })
+      : null,
+  ]);
+  return booking;
+}
+
+/**
+ * Coordinator's decision on a refund request: `refundPercent` of the
+ * service amount goes back to the farmer; the rest (minus the platform fee
+ * on that remainder) joins the admin's payout queue for the provider.
+ * 100% cancels the booking; 0% is a plain confirm.
+ */
+export async function resolveRefund(bookingId: string, refundPercent: number, notes: string) {
   const booking = await prisma.booking.findUniqueOrThrow({ where: { id: bookingId } });
-  if (booking.status !== "DISPUTED") {
-    throw new Error("Only a disputed booking can be resolved this way");
+  if (!booking.serviceAmount) throw new Error("This booking has no payment to split");
+
+  const refundAmount = Math.round((booking.serviceAmount * refundPercent) / 100);
+
+  // Claim it in one conditional update so two coordinators can't both resolve it.
+  const claim = await prisma.booking.updateMany({
+    where: { id: bookingId, status: "DISPUTED", escrowStatus: "FROZEN" },
+    data: {
+      escrowStatus: "HELD",
+      refundPercent,
+      refundAmount,
+      resolutionNotes: notes || null,
+      resolvedAt: new Date(),
+    },
+  });
+  if (claim.count === 0) throw new Error("This refund request has already been resolved");
+
+  // If the Razorpay refund fails, put it back so the coordinator can try again.
+  const unclaim = () =>
+    prisma.booking.update({
+      where: { id: bookingId },
+      data: { escrowStatus: "FROZEN", refundPercent: null, refundAmount: null, resolvedAt: null },
+    });
+
+  if (refundPercent === 100) {
+    let cancelled;
+    try {
+      cancelled = await cancelBooking(bookingId, notes || "Refund request resolved — full refund to the farmer");
+    } catch (error) {
+      await unclaim();
+      throw error;
+    }
+    if (booking.providerId) {
+      const provider = await prisma.providerProfile.findUnique({ where: { id: booking.providerId } });
+      if (provider) {
+        await notify({
+          userId: provider.userId,
+          type: "STATUS_CHANGED",
+          title: "Refund request resolved",
+          message: "The coordinator refunded the farmer in full, so there is no payout for this job.",
+          bookingId,
+        });
+      }
+    }
+    return cancelled;
   }
 
-  if (outcome === "release") {
-    // Back into the admin's payout queue — never pays the provider directly.
-    await prisma.booking.update({ where: { id: bookingId }, data: { escrowStatus: "HELD" } });
-    return confirmWorkDone(bookingId, "dispute_resolved");
+  if (refundAmount > 0) {
+    try {
+      if (booking.razorpayPaymentId) {
+        await razorpay.refundPayment({ paymentId: booking.razorpayPaymentId, amountRupees: refundAmount });
+      }
+    } catch (error) {
+      await unclaim();
+      throw error;
+    }
+    const { platformFee, providerNet } = computeFees(
+      booking.serviceAmount - refundAmount,
+      booking.commissionRate ?? DEFAULT_COMMISSION_RATE,
+    );
+    await prisma.booking.update({ where: { id: bookingId }, data: { platformFee, providerNet } });
   }
 
-  return cancelBooking(bookingId, reason || "Dispute resolved in the requester's favour");
+  await notify({
+    userId: booking.farmerId,
+    type: "STATUS_CHANGED",
+    title: "Refund request resolved",
+    sms: true,
+    message:
+      refundAmount > 0
+        ? `${formatRupees(refundAmount)} (${refundPercent}%) is being refunded to you. ${notes}`.trim()
+        : `The coordinator decided no refund is due. ${notes}`.trim(),
+    bookingId,
+  });
+
+  return confirmWorkDone(bookingId, refundAmount > 0 ? "refund_split" : "dispute_resolved");
 }
 
 /**

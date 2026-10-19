@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/authz";
 import { getAllUsers } from "@/lib/queries";
 import { UserRow } from "@/components/admin/UserRow";
+import { AddCoordinatorDialog } from "@/components/admin/AddCoordinatorDialog";
 import { ROLE_LABELS } from "@/lib/constants";
 import { inputClass, labelClass } from "@/lib/ui";
 import type { Role } from "@/generated/prisma/enums";
@@ -16,8 +17,13 @@ export default async function AdminUsersPage({
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold">Users</h1>
-      <p className="mt-1 text-ink-soft">Every account on the platform, across all four roles.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Users</h1>
+          <p className="mt-1 text-ink-soft">Every account on the platform, across all four roles.</p>
+        </div>
+        <AddCoordinatorDialog />
+      </div>
 
       <form className="mt-6 grid gap-3 rounded-xl border border-line bg-surface p-4 sm:grid-cols-[1fr_1fr_auto]">
         <div>

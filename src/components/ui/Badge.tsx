@@ -28,6 +28,7 @@ const BOOKING_STATUS_TONE: Record<BookingStatus, keyof typeof tones> = {
   READY_TO_START: "active",
   IN_PROGRESS: "active",
   PROVIDER_COMPLETED: "pending",
+  CONCERN_RAISED: "pending",
   CONFIRMED: "active",
   SETTLED: "active",
   CANCELLED: "danger",

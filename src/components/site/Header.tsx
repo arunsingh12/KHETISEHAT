@@ -32,9 +32,6 @@ export async function Header() {
           <Link href="/health-services" className={navLink}>
             {t.nav.health}
           </Link>
-          <Link href="/hospitals" className={navLink}>
-            {t.nav.hospitals}
-          </Link>
           {session?.user.role === "FARMER" && (
             <Link href="/farmer/bookings" className={navLink}>
               {t.nav.myBookings}

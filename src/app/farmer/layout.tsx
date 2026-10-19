@@ -23,7 +23,6 @@ export default async function FarmerLayout({ children }: { children: React.React
           items: [
             { href: "/agri-services", label: "Agri Services" },
             { href: "/health-services", label: "Health Services" },
-            { href: "/hospitals", label: "Hospitals" },
           ],
         },
       ]}

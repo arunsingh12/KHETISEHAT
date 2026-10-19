@@ -27,10 +27,31 @@ by the admin** (bank transfer or UPI) and recorded in the app.
    money `RELEASED`. The provider and farmer are notified.
 
 Cancellations before payout refund the farmer in full via the Razorpay
-refund API. If the farmer raises an issue instead of confirming, the
-payment is put on hold (`DISPUTED` / `FROZEN`) until a coordinator resolves
-it — refund the farmer, or side with the provider, which sends the booking
-to step 6 like any other confirmed job.
+refund API.
+
+### When the farmer isn't happy (step 5)
+
+Instead of confirming, the farmer has two separate buttons:
+
+- **Raise Concern** — goes to the **provider**, not a coordinator. Booking
+  → `CONCERN_RAISED`; the money stays `HELD` and the 72-hour timer stops.
+  The provider fixes the work and clicks **Resubmit Work**, which puts the
+  booking back to `PROVIDER_COMPLETED` with a fresh 72-hour timer. This
+  can repeat.
+- **Request Refund** — goes to the **coordinators**. Allowed from
+  `PROVIDER_COMPLETED` or `CONCERN_RAISED`. Booking → `DISPUTED`, money
+  `FROZEN`. The coordinator calls both the farmer and the provider (their
+  numbers are shown under **Refunds & Cancellations**), agrees an outcome,
+  and enters the **refund %**:
+  - **100%** — full refund via Razorpay, booking `CANCELLED` / `REFUNDED`.
+  - **0%** — no refund; booking `CONFIRMED`, joins the admin payout queue.
+  - **Anything in between** — that % of the service amount is refunded to
+    the farmer via Razorpay (partial refund). The platform fee and
+    `providerNet` are recalculated on the remainder, and the booking goes
+    `CONFIRMED` → admin payout (step 6) as usual.
+
+  The decision is recorded on the booking as `refundPercent`,
+  `refundAmount`, `resolutionNotes` and `resolvedAt`.
 
 ## Booking status ↔ money status
 
@@ -43,11 +64,12 @@ money is.
 | `AWAITING_PAYMENT` | `UNPAID` | Farmer pays |
 | `READY_TO_START` | `HELD` — with Kheti Sehat | Provider starts work |
 | `IN_PROGRESS` | `HELD` | Provider finishes |
-| `PROVIDER_COMPLETED` | `HELD` | Farmer confirms or raises an issue, or 72h auto-confirm |
+| `PROVIDER_COMPLETED` | `HELD` | Farmer confirms, raises a concern, or requests a refund — or 72h auto-confirm |
+| `CONCERN_RAISED` | `HELD` | Provider fixes the work and resubmits (farmer may still request a refund) |
 | `CONFIRMED` | `HELD` | Admin pays the provider and marks it paid |
 | `SETTLED` | `RELEASED` — paid to provider | — |
 | `CANCELLED` | `REFUNDED` or `UNPAID` | — |
-| `DISPUTED` | `FROZEN` — on hold | Coordinator resolves |
+| `DISPUTED` (Refund Requested) | `FROZEN` — on hold | Coordinator contacts both sides and sets the refund % |
 
 ## The fee
 

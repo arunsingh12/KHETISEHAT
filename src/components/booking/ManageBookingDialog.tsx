@@ -37,7 +37,8 @@ export function ManageBookingDialog({
     PROVIDER_COMPLETED: "You've marked this job complete — waiting for the farmer to confirm the work.",
     CONFIRMED: "The farmer confirmed the work. Kheti Sehat will send your payout shortly.",
     SETTLED: "Job complete — your payout has been sent.",
-    DISPUTED: "The farmer raised an issue — a coordinator is reviewing it.",
+    CONCERN_RAISED: "The farmer raised a concern — fix the work, then use Resubmit Work on the booking.",
+    DISPUTED: "The farmer requested a refund — a coordinator will contact you and decide the split.",
     CANCELLED: "This booking was cancelled.",
   };
 

@@ -2,6 +2,7 @@ import { BookingStatusBadge, EscrowStatusBadge, Badge } from "@/components/ui/Ba
 import { BookingDetailDialog } from "@/components/booking/BookingDetailDialog";
 import { ManageBookingDialog } from "@/components/booking/ManageBookingDialog";
 import { CancelBookingDialog } from "@/components/booking/CancelBookingDialog";
+import { ResubmitWorkDialog } from "@/components/booking/ResubmitWorkDialog";
 import { formatDate, formatRupees } from "@/lib/format";
 import { AGRI_CATEGORY_LABELS, HEALTH_CATEGORY_LABELS, SECTION_LABELS } from "@/lib/constants";
 import type { getCoordinatorBookings } from "@/lib/queries";
@@ -57,11 +58,25 @@ export function QueueBookingCard({
           Waiting for the farmer to pay — don&apos;t start yet.
         </p>
       )}
+      {booking.status === "CONCERN_RAISED" && (
+        <p className="mt-2 rounded-lg bg-status-pending-bg px-3 py-2 text-sm text-status-pending">
+          The farmer raised a concern: “{booking.concernReason}”. Check the work, fix it, then use Resubmit Work.
+        </p>
+      )}
+      {booking.status === "DISPUTED" && (
+        <p className="mt-2 rounded-lg bg-status-danger-bg px-3 py-2 text-sm text-status-danger">
+          The farmer requested a refund: “{booking.disputeReason}”. The payment is on hold — a coordinator will
+          contact you.
+        </p>
+      )}
       {booking.serviceAmount != null && (
         <p className="mt-1 text-sm font-medium text-ink">{formatRupees(booking.serviceAmount)}</p>
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
+        {booking.status === "CONCERN_RAISED" && (
+          <ResubmitWorkDialog bookingId={booking.id} concern={booking.concernReason} />
+        )}
         <ManageBookingDialog
           bookingId={booking.id}
           hasPrice={booking.serviceAmount != null}

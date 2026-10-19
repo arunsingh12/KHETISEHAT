@@ -2,11 +2,12 @@ import { BookingStatusBadge, EscrowStatusBadge } from "@/components/ui/Badge";
 import { BookingDetailDialog } from "@/components/booking/BookingDetailDialog";
 import { PayButton } from "@/components/booking/PayButton";
 import { ConfirmDoneButton } from "@/components/booking/ConfirmDoneButton";
-import { DisputeBookingDialog } from "@/components/booking/DisputeBookingDialog";
+import { RaiseConcernDialog } from "@/components/booking/RaiseConcernDialog";
+import { RequestRefundDialog } from "@/components/booking/RequestRefundDialog";
 import { CancelBookingDialog } from "@/components/booking/CancelBookingDialog";
 import { RateProviderDialog } from "@/components/booking/RateProviderDialog";
 import { RatingStars } from "@/components/RatingStars";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatRupees } from "@/lib/format";
 import { AGRI_CATEGORY_LABELS, HEALTH_CATEGORY_LABELS, SECTION_LABELS } from "@/lib/constants";
 import type { getFarmerBookings } from "@/lib/queries";
 
@@ -43,6 +44,30 @@ export function FarmerBookingCard({ booking }: { booking: Booking }) {
 
       <p className="mt-2 text-sm text-ink-soft">{booking.description}</p>
 
+      {booking.status === "PROVIDER_COMPLETED" && booking.concernCount > 0 && (
+        <p className="mt-2 rounded-lg bg-status-active-bg px-3 py-2 text-xs text-status-active">
+          The provider has resubmitted the work after your concern
+          {booking.resubmissionNote ? `: “${booking.resubmissionNote}”` : "."} Please check it again.
+        </p>
+      )}
+      {booking.status === "CONCERN_RAISED" && (
+        <p className="mt-2 rounded-lg bg-status-pending-bg px-3 py-2 text-xs text-status-pending">
+          You raised a concern: “{booking.concernReason}”. The provider is fixing it and will resubmit the work. If
+          it can&apos;t be sorted out, you can request a refund.
+        </p>
+      )}
+      {booking.status === "DISPUTED" && (
+        <p className="mt-2 rounded-lg bg-status-pending-bg px-3 py-2 text-xs text-status-pending">
+          Refund requested. Your payment is on hold — a Kheti Sehat coordinator will call you and the provider to
+          decide the refund.
+        </p>
+      )}
+      {booking.refundAmount != null && booking.refundAmount > 0 && (
+        <p className="mt-2 rounded-lg bg-brand-light px-3 py-2 text-xs text-brand-deep">
+          {formatRupees(booking.refundAmount)} ({booking.refundPercent}%) refunded to you.
+          {booking.resolutionNotes ? ` ${booking.resolutionNotes}` : ""}
+        </p>
+      )}
       {booking.status === "CONFIRMED" && (
         <p className="mt-2 rounded-lg bg-brand-light px-3 py-2 text-xs text-brand-deep">
           Thanks for confirming. Kheti Sehat will now pay the provider.
@@ -62,9 +87,11 @@ export function FarmerBookingCard({ booking }: { booking: Booking }) {
         {booking.status === "PROVIDER_COMPLETED" && (
           <>
             <ConfirmDoneButton bookingId={booking.id} />
-            <DisputeBookingDialog bookingId={booking.id} />
+            <RaiseConcernDialog bookingId={booking.id} />
+            <RequestRefundDialog bookingId={booking.id} />
           </>
         )}
+        {booking.status === "CONCERN_RAISED" && <RequestRefundDialog bookingId={booking.id} />}
         {(booking.status === "CONFIRMED" || booking.status === "SETTLED") && !booking.rating && booking.provider && (
           <RateProviderDialog bookingId={booking.id} providerName={booking.provider.displayName} />
         )}

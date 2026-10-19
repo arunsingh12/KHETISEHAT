@@ -53,6 +53,11 @@ export default async function AdminPayoutsPage() {
                 <div>
                   <dt className="text-xs text-ink-faint">Farmer paid</dt>
                   <dd className="font-medium">{formatRupees(b.serviceAmount)}</dd>
+                  {b.refundAmount ? (
+                    <dd className="text-xs text-status-danger">
+                      − {formatRupees(b.refundAmount)} refunded ({b.refundPercent}%)
+                    </dd>
+                  ) : null}
                 </div>
                 <div>
                   <dt className="text-xs text-ink-faint">Platform fee ({b.commissionRate}%)</dt>
