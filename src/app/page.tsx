@@ -1,6 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
-import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
 
@@ -11,12 +8,23 @@ import { listAgriProviders, listHealthProviders } from "@/lib/queries";
 import { AUTO_CONFIRM_HOURS, DEFAULT_COMMISSION_RATE } from "@/lib/constants";
 import { ProviderCard } from "@/components/ProviderCard";
 import { DirectoryFilters } from "@/components/directory/DirectoryFilters";
-import { HeroArt } from "@/components/directory/HeroArt";
+import { HeroScene } from "@/components/home/HeroScene";
 import { WorkflowTabs } from "@/components/home/WorkflowTabs";
 import type { AgriCategory, AyushmanStatus, HealthCategory } from "@/generated/prisma/enums";
 
-// A real photo at public/hero.jpg replaces the illustrated stand-in.
-const HAS_HERO_PHOTO = fs.existsSync(path.join(process.cwd(), "public", "hero.jpg"));
+// One-tap shortcuts in the hero's split strip.
+const AGRI_PICKS: { category: AgriCategory; label: string }[] = [
+  { category: "DRONE_SERVICES", label: "Drone · ड्रोन" },
+  { category: "SOIL_TESTING", label: "Soil test · मिट्टी जाँच" },
+  { category: "AGRONOMIST", label: "Agronomist" },
+  { category: "EQUIPMENT_RENTAL", label: "Equipment" },
+];
+const HEALTH_PICKS: { category: HealthCategory; label: string }[] = [
+  { category: "DOCTOR", label: "Doctor · डॉक्टर" },
+  { category: "PATHOLOGY_LAB", label: "Lab test · जाँच" },
+  { category: "PHARMACY", label: "Pharmacy" },
+  { category: "AMBULANCE", label: "Ambulance" },
+];
 
 const TRUST_POINTS = [
   { title: "Verified providers", hindi: "सत्यापित सेवा प्रदाता", body: "Every provider is checked by a Kheti Sehat coordinator before they appear here." },
@@ -77,55 +85,132 @@ export default async function HomePage({
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       {/* ---------- Hero ---------- */}
-      <section className="grid items-center gap-8 overflow-hidden rounded-[1.75rem] bg-brand p-6 text-white sm:p-10 md:grid-cols-[1.35fr_1fr] md:gap-10">
-        <div>
-          {/* The greeting stays in Hindi in both languages, as on the original site. */}
-          <h1 className="font-display text-3xl font-bold leading-tight sm:text-5xl">{dictionaries.hi.home.title}</h1>
-          <p className="mt-5 text-lg leading-relaxed text-white/95 sm:text-2xl">{t.home.subtitle}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <span className="rounded-full bg-[#f29c11] px-4 py-1.5 text-sm font-semibold text-ink">
-              {dictionaries.hi.home.badgeVerified}
-            </span>
-            <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-ink">
-              {t.home.badgeAyushman}
-            </span>
-          </div>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="#providers"
-              className="rounded-full bg-white px-6 py-3 font-semibold text-brand-deep transition-colors hover:bg-brand-light"
-            >
-              Find a service
-            </Link>
-            <Link
-              href="#how-it-works"
-              className="rounded-full border border-white/70 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              How it works
-            </Link>
-            {!loggedIn && (
+      <section className="relative overflow-hidden rounded-[1.75rem] bg-brand-deep text-white">
+        {/* Furrow lines + a giant faint wordmark give the green its texture. */}
+        <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07]">
+          <defs>
+            <pattern id="furrows" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)">
+              <path d="M0 14 H28" stroke="#ffffff" strokeWidth="2" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#furrows)" />
+        </svg>
+        <p
+          aria-hidden
+          className="pointer-events-none absolute -bottom-6 -left-2 select-none whitespace-nowrap font-display text-[7rem] font-bold leading-none text-white/[0.05] sm:text-[11rem]"
+        >
+          खेती + सेहत
+        </p>
+
+        <div className="relative grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-white/90 ring-1 ring-white/20">
+              <span className="h-2 w-2 rounded-full bg-[#f3b94d]" />
+              Agri + Health · one trusted friend
+            </p>
+            {/* The greeting stays in Hindi in both languages, as on the original site. */}
+            <h1 className="mt-5 font-display text-4xl font-bold leading-[1.15] sm:text-6xl">
+              <span className="text-[#bfe3a0]">खेती</span>
+              <span className="mx-2 inline-block -translate-y-1 text-3xl text-[#f3b94d] sm:text-5xl">+</span>
+              <span className="relative inline-block text-[#ffd9a0]">
+                सेहत
+                <svg aria-hidden viewBox="0 0 120 12" className="absolute -bottom-2 left-0 h-3 w-full" preserveAspectRatio="none">
+                  <path d="M2 8 Q30 2 60 7 T118 5" stroke="#f3b94d" strokeWidth="4" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="mt-1 block text-3xl text-white sm:text-5xl">में आपका स्वागत है</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/90">{t.home.subtitle}</p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
-                href="/register?role=PROVIDER"
-                className="rounded-full px-2 py-3 font-semibold text-white underline-offset-4 hover:underline"
+                href="#providers"
+                className="rounded-full bg-[#f3b94d] px-6 py-3 font-semibold text-ink shadow-lg shadow-black/20 transition-colors hover:bg-[#f7c868]"
               >
-                Join as a provider →
+                Find a service
               </Link>
-            )}
+              <Link
+                href="#how-it-works"
+                className="rounded-full border border-white/60 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                How it works
+              </Link>
+              {!loggedIn && (
+                <Link
+                  href="/register?role=PROVIDER"
+                  className="px-2 py-3 font-semibold text-white underline-offset-4 hover:underline"
+                >
+                  Join as a provider →
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Scene + floating cards that tell the payment story at a glance */}
+          <div className="relative">
+            <div className="overflow-hidden rounded-3xl shadow-2xl shadow-black/30 ring-4 ring-white/10">
+              <HeroScene className="block aspect-[32/21] h-auto w-full" />
+            </div>
+            <div className="absolute -top-3 right-3 flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-deep shadow-lg sm:-right-3">
+              <span className="text-[#e0a21b]">★ 4.8</span>
+              <span className="text-ink-faint">·</span>
+              <span>✓ {dictionaries.hi.home.badgeVerified}</span>
+            </div>
+            <div className="relative -mt-10 ml-3 mr-8 rounded-2xl bg-white p-4 text-ink shadow-xl sm:absolute sm:-bottom-6 sm:-left-6 sm:m-0 sm:w-72">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-marigold">ड्रोन छिड़काव</p>
+                  <p className="font-display text-base font-semibold">Drone spraying · 2 acres</p>
+                </div>
+                <p className="font-display text-lg font-bold text-brand-deep">₹1,800</p>
+              </div>
+              <ol className="mt-3 grid grid-cols-3 gap-1 text-[11px] leading-tight">
+                {[
+                  { label: "You pay", done: true },
+                  { label: "Held by Kheti Sehat", done: true, current: true },
+                  { label: "Provider paid", done: false },
+                ].map((s) => (
+                  <li key={s.label}>
+                    <span
+                      className={clsx(
+                        "mb-1 block h-1.5 rounded-full",
+                        s.done ? "bg-brand" : "bg-line",
+                        s.current && "bg-[#f3b94d]",
+                      )}
+                    />
+                    <span className={s.done ? "font-semibold text-ink" : "text-ink-faint"}>{s.label}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
         </div>
-        <div className="overflow-hidden rounded-2xl bg-white/10">
-          {HAS_HERO_PHOTO ? (
-            <Image
-              src="/hero.jpg"
-              alt="Farm fields"
-              width={1200}
-              height={680}
-              priority
-              className="aspect-[16/9] h-full w-full object-cover"
-            />
-          ) : (
-            <HeroArt className="aspect-[16/9] h-full w-full" />
-          )}
+
+        {/* Split strip: the two halves of the name, each with one-tap services */}
+        <div className="relative mt-4 grid sm:mt-8 md:grid-cols-2">
+          <div className="flex flex-wrap items-center gap-2 bg-brand px-6 py-4 sm:px-10">
+            <span className="mr-1 font-display text-lg font-bold text-[#bfe3a0]">खेती</span>
+            {AGRI_PICKS.map((p) => (
+              <Link
+                key={p.category}
+                href={`/?tab=agri&category=${p.category}#providers`}
+                className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-white hover:text-brand-deep"
+              >
+                {p.label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 bg-marigold-light px-6 py-4 sm:px-10">
+            <span className="mr-1 font-display text-lg font-bold text-marigold">सेहत</span>
+            {HEALTH_PICKS.map((p) => (
+              <Link
+                key={p.category}
+                href={`/?tab=health&category=${p.category}#providers`}
+                className="rounded-full bg-white px-3 py-1 text-sm font-medium text-ink ring-1 ring-marigold/30 transition-colors hover:bg-marigold hover:text-white"
+              >
+                {p.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

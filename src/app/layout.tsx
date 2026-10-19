@@ -3,6 +3,8 @@ import { Bitter, Mukta } from "next/font/google";
 
 import "./globals.css";
 import { Header } from "@/components/site/Header";
+import { FooterGate } from "@/components/site/FooterGate";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 const bitter = Bitter({
   variable: "--font-bitter",
@@ -28,9 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-full flex-col bg-paper text-ink">
         <Header />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-line bg-surface py-6 text-center text-xs text-ink-faint">
-          Kheti Sehat · खेती सेहत — agri &amp; rural-health services marketplace
-        </footer>
+        <FooterGate
+          full={<SiteFooter />}
+          slim={
+            <footer className="border-t border-line bg-surface py-6 text-center text-xs text-ink-faint">
+              Kheti Sehat · खेती सेहत — agri &amp; rural-health services marketplace
+            </footer>
+          }
+        />
       </body>
     </html>
   );
