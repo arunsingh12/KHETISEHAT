@@ -5,6 +5,9 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Self-hosted (cPanel/Passenger) behind the host's own proxy, so Auth.js
+  // can't auto-detect a trusted host the way it does on Vercel/Netlify.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

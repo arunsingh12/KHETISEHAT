@@ -5,8 +5,9 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
-  // native for local dev, rhel for Netlify's Lambda runtime
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  // native for local dev; rhel for Netlify's Lambda runtime (3.0.x) and
+  // cPanel's CloudLinux 7 / 8 / 9 servers (1.0.x / 1.1.x / 3.0.x)
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

@@ -27,3 +27,6 @@ npm-debug.log*
 
 # local Claude Code settings
 .claude/settings.local.json
+
+# cPanel bundle from `npm run build:cpanel`
+/deploy/
