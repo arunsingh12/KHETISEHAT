@@ -37,6 +37,26 @@ fs.mkdirSync(outDir, { recursive: true });
 // The standalone output links some packages (e.g. @prisma/client) back into
 // node_modules; copy the real files so the zip works on the server.
 fs.cpSync(standalone, outDir, { recursive: true, dereference: true });
+
+// cpSync's `dereference` only applies to the top-level source: nested
+// symlinks — like Turbopack's .next/node_modules/@prisma/client-<hash> alias
+// — get copied as links rewritten to an absolute path on *this* machine,
+// which doesn't exist on the server ("Cannot find package
+// '@prisma/client-…'"). Replace every remaining link with the real files.
+function materializeSymlinks(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isSymbolicLink()) {
+      const target = fs.realpathSync(p);
+      fs.rmSync(p);
+      fs.cpSync(target, p, { recursive: true, dereference: true });
+      console.log(`  inlined link ${path.relative(outDir, p)}`);
+    } else if (entry.isDirectory()) {
+      materializeSymlinks(p);
+    }
+  }
+}
+materializeSymlinks(outDir);
 // The standalone server serves these itself once they're copied in.
 fs.cpSync(path.join(root, "public"), path.join(outDir, "public"), { recursive: true });
 fs.cpSync(path.join(root, ".next", "static"), path.join(outDir, ".next", "static"), { recursive: true });
@@ -56,8 +76,14 @@ if (fs.existsSync(prismaDir)) {
       fs.rmSync(path.join(prismaDir, name));
     }
   }
+  // At runtime the bundled client looks for its engine in <app>/.prisma/client
+  // and <app>/src/generated — not in src/generated/prisma where tracing puts
+  // it ("could not locate the Query Engine"). Move the engines there.
+  const engineDir = path.join(outDir, ".prisma", "client");
+  fs.mkdirSync(engineDir, { recursive: true });
   const engines = fs.readdirSync(prismaDir).filter((n) => n.includes("query_engine"));
-  console.log(`  Prisma engines included: ${engines.join(", ") || "NONE — check binaryTargets"}`);
+  for (const name of engines) fs.renameSync(path.join(prismaDir, name), path.join(engineDir, name));
+  console.log(`  Prisma engines in .prisma/client: ${engines.join(", ") || "NONE — check binaryTargets"}`);
 }
 
 // bsdtar ships with Windows 10+ and macOS; `-a` picks zip from the extension.
