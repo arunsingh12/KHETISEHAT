@@ -7,7 +7,7 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About · Kheti Sehat",
-  description: "Why Kheti Sehat exists and how it keeps agri and health services in rural Uttar Pradesh fair and safe.",
+  description: "Why Kheti Sehat exists and how it keeps agri and health services in rural India fair and safe.",
 };
 
 const HALVES = [
@@ -63,7 +63,7 @@ export default function AboutPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       <PageHero eyebrow="About us · हमारे बारे में" title="One trusted friend for the farm and the family" hindi="खेत और परिवार — दोनों के लिए एक भरोसेमंद साथी">
-        Kheti Sehat connects families in rural Uttar Pradesh with verified agri and health service providers — and
+        Kheti Sehat connects families in rural India with verified agri and health service providers — and
         holds the payment safely until the job is done right.
       </PageHero>
 
@@ -147,7 +147,7 @@ export default function AboutPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-5 text-sm text-ink-soft">More districts are coming. Want us in yours? Tell us.</p>
+          <p className="mt-5 text-sm text-ink-soft">Wherever you are in India, you can find and book a verified provider.</p>
         </div>
       </section>
 

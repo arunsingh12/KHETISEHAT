@@ -58,7 +58,7 @@ export function SiteFooter() {
             {SITE.tagline}. Verified providers, payments held safely until you confirm the work.
           </p>
           <div className="mt-5 space-y-1.5 text-sm">
-            <a href={`tel:${digits(SITE.phone)}`} className="block text-white/90 hover:text-white">
+            <a href={`tel:+${digits(SITE.phone)}`} className="block text-white/90 hover:text-white">
               📞 {SITE.phone}
             </a>
             <a href={`mailto:${SITE.email}`} className="block text-white/90 hover:text-white">
@@ -96,7 +96,7 @@ export function SiteFooter() {
           <p>
             © {new Date().getFullYear()} {SITE.name} · {SITE.nameHindi}. All rights reserved.
           </p>
-          <p>Serving {SITE.serviceArea.join(" · ")}</p>
+          <p>Serving all districts across India</p>
         </div>
       </div>
     </footer>

@@ -118,7 +118,7 @@ async function extractWithAnthropic(message: string, apiKey: string): Promise<Ex
     model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
     max_tokens: 1024,
     system:
-      "You extract service-booking details from WhatsApp messages sent by farmers in rural Uttar Pradesh, India, in Hindi, English, or Hinglish. " +
+      "You extract service-booking details from WhatsApp messages sent by farmers in rural India, in Hindi, English, or Hinglish. " +
       "Always call the record_booking tool. Use 'unknown' for a category field you cannot place, " +
       "and mark your own confidence honestly — 'low' for anything guessed or inferred rather than stated.",
     tools: [TOOL_SCHEMA],

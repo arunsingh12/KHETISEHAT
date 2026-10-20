@@ -16,7 +16,7 @@ const CHANNELS = [
     title: "Call us",
     hindi: "फ़ोन करें",
     value: SITE.phone,
-    href: `tel:${digits(SITE.phone)}`,
+    href: `tel:+${digits(SITE.phone)}`,
     note: SITE.hours,
   },
   {
@@ -153,7 +153,7 @@ export default function ContactPage() {
               <dd className="mt-0.5 text-base">{SITE.hours}</dd>
             </div>
             <div>
-              <dt className="text-white/60">Districts we serve</dt>
+              <dt className="text-white/60">Districts we cover</dt>
               <dd className="mt-2 flex flex-wrap gap-2">
                 {SITE.serviceArea.map((d) => (
                   <span key={d} className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/20">

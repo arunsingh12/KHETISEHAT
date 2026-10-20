@@ -1,7 +1,7 @@
 # Kheti Sehat
 
 A Next.js rebuild of the Kheti Sehat marketplace — verified agri and health
-service providers for rural Uttar Pradesh — including the payment
+service providers for rural India — including the payment
 module described in `docs/payment-module.md`.
 
 ## Stack

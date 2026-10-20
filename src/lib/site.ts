@@ -1,20 +1,17 @@
 /**
  * Public company details shown in the footer and on the About, Contact,
  * Terms and Privacy pages — edit them here, in one place.
- *
- * TODO: replace the placeholder phone, WhatsApp, email and address below
- * with Kheti Sehat's real details before going live.
  */
 export const SITE = {
   name: "Kheti Sehat",
   nameHindi: "खेती सेहत",
-  tagline: "Trusted agri and health services for rural Uttar Pradesh",
-  phone: "+91 90000 00000", // placeholder
-  whatsapp: "+91 90000 00000", // placeholder
-  email: "support@khetisehat.example", // placeholder
-  address: "Gorakhpur, Uttar Pradesh, India", // placeholder
+  tagline: "Trusted agri and health services for rural India",
+  phone: "+91 81309 56876",
+  whatsapp: "+91 81309 56876",
+  email: "support@khetisehat.com",
+  address: "Noida, Uttar Pradesh, India",
   hours: "Mon–Sat, 9am–7pm",
-  serviceArea: ["Gorakhpur", "Maharajganj", "Deoria", "Kushinagar", "Varanasi"],
+  serviceArea: ["All districts in India"],
   legalUpdated: "19 October 2026",
 } as const;
 
