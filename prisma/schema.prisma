@@ -29,12 +29,21 @@ enum Section {
   HEALTH
 }
 
+// The first five keep their original codes (labels changed in
+// src/lib/constants.ts) so existing providers and bookings stay valid.
 enum AgriCategory {
   DRONE_SERVICES
   EQUIPMENT_RENTAL
-  AGRONOMIST
-  SOIL_TESTING
-  SOLAR_SERVICES
+  AGRONOMIST // Agronomist & Crop Advisory
+  SOIL_TESTING // Soil, Water & Leaf Testing
+  SOLAR_SERVICES // Solar & Irrigation Installation
+  DAIRY_LIVESTOCK
+  FISHERY_AQUACULTURE
+  POULTRY_PIGGERY
+  PROTECTED_CULTIVATION
+  FARM_LABOR
+  POST_HARVEST_LOGISTICS
+  GOVT_SCHEMES_FPO
 }
 
 enum HealthCategory {

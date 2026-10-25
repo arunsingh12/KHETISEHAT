@@ -157,12 +157,20 @@ async function extractWithAnthropic(message: string, apiKey: string): Promise<Ex
   };
 }
 
+// First match wins, so the more specific categories come first.
 const AGRI_KEYWORDS: [RegExp, AgriCategory][] = [
   [/drone|ड्रोन|छिड़काव|spray/i, "DRONE_SERVICES"],
-  [/tractor|ट्रैक्टर|equipment|किराया|rental|harvester|thresher/i, "EQUIPMENT_RENTAL"],
-  [/agronomist|कृषि विशेषज्ञ|crop advi[cs]e|फसल सलाह/i, "AGRONOMIST"],
-  [/soil test|मिट्टी जांच|मिट्टी परीक्षण/i, "SOIL_TESTING"],
-  [/solar|सोलर|सौर/i, "SOLAR_SERVICES"],
+  [/scheme|yojana|योजना|subsidy|सब्सिडी|\bfpo\b|एफपीओ|pm[- ]?kisan|kcc|kisan credit/i, "GOVT_SCHEMES_FPO"],
+  [/poly ?house|पॉलीहाउस|green ?house|net ?house|hydroponic|smart farm|स्मार्ट फार्मिंग/i, "PROTECTED_CULTIVATION"],
+  [/fish|मछली|मत्स्य|pond|तालाब|aquacultur|prawn|shrimp/i, "FISHERY_AQUACULTURE"],
+  [/poultry|पोल्ट्री|murgi|मुर्गी|chicken|broiler|piggery|सूअर|pig\b/i, "POULTRY_PIGGERY"],
+  [/dairy|डेयरी|cow|गाय|buffalo|भैंस|cattle|पशु|livestock|goat|बकरी|vet(erinar)?/i, "DAIRY_LIVESTOCK"],
+  [/labou?r|मजदूर|majdoor|sowing|बुवाई|transplant|रोपाई|weeding|निराई|crew/i, "FARM_LABOR"],
+  [/cold storage|कोल्ड स्टोरेज|mandi|मंडी|transport|परिवहन|warehouse|गोदाम|post[- ]?harvest/i, "POST_HARVEST_LOGISTICS"],
+  [/soil test|water test|leaf test|मिट्टी जांच|मिट्टी परीक्षण|पानी की जांच/i, "SOIL_TESTING"],
+  [/solar|सोलर|सौर|irrigation|सिंचाई|drip|ड्रिप|sprinkler|borewell|बोरवेल/i, "SOLAR_SERVICES"],
+  [/tractor|ट्रैक्टर|equipment|किराया|rental|harvester|thresher|machinery|मशीनरी/i, "EQUIPMENT_RENTAL"],
+  [/agronomist|कृषि विशेषज्ञ|crop advi[cs]e|फसल सलाह|pest|कीट|disease|रोग/i, "AGRONOMIST"],
 ];
 
 const HEALTH_KEYWORDS: [RegExp, HealthCategory][] = [

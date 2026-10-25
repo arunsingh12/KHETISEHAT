@@ -34,12 +34,36 @@ export const SECTION_LABELS: Record<Section, string> = {
   HEALTH: "Health Services",
 };
 
+// Listed in dropdown order.
 export const AGRI_CATEGORY_LABELS: Record<AgriCategory, string> = {
   DRONE_SERVICES: "Drone Services",
   EQUIPMENT_RENTAL: "Equipment Rental",
-  AGRONOMIST: "Agronomist",
-  SOIL_TESTING: "Soil Testing",
-  SOLAR_SERVICES: "Solar Services",
+  AGRONOMIST: "Agronomist & Crop Advisory",
+  SOIL_TESTING: "Soil, Water & Leaf Testing",
+  DAIRY_LIVESTOCK: "Dairy & Livestock Care",
+  FISHERY_AQUACULTURE: "Fishery & Aquaculture Advisory",
+  POULTRY_PIGGERY: "Poultry & Piggery Services",
+  SOLAR_SERVICES: "Solar & Irrigation Installation",
+  PROTECTED_CULTIVATION: "Protected Cultivation & AgTech",
+  FARM_LABOR: "Farm Labor & Sowing Crews",
+  POST_HARVEST_LOGISTICS: "Post-Harvest & Mandi Logistics",
+  GOVT_SCHEMES_FPO: "Govt Schemes & FPO Consulting",
+};
+
+/** Hindi names, shown next to the English ones in category dropdowns. */
+export const AGRI_CATEGORY_LABELS_HI: Record<AgriCategory, string> = {
+  DRONE_SERVICES: "ड्रोन सेवाएं",
+  EQUIPMENT_RENTAL: "कृषि मशीनरी किराया",
+  AGRONOMIST: "कृषि विशेषज्ञ सलाह",
+  SOIL_TESTING: "मिट्टी और पानी की जांच",
+  DAIRY_LIVESTOCK: "डेयरी और पशु चिकित्सा",
+  FISHERY_AQUACULTURE: "मत्स्य पालन सेवाएं",
+  POULTRY_PIGGERY: "पोल्ट्री और सूअर पालन",
+  SOLAR_SERVICES: "सोलर और सिंचाई सेवाएं",
+  PROTECTED_CULTIVATION: "पॉलीहाउस और स्मार्ट फार्मिंग",
+  FARM_LABOR: "कृषि मजदूर सेवाएं",
+  POST_HARVEST_LOGISTICS: "परिवहन और कोल्ड स्टोरेज",
+  GOVT_SCHEMES_FPO: "सरकारी योजनाएं और एफपीओ सलाह",
 };
 
 export const HEALTH_CATEGORY_LABELS: Record<HealthCategory, string> = {
@@ -94,9 +118,9 @@ export const AUTO_CONFIRM_HOURS = 72;
 export const DEFAULT_COMMISSION_RATE = 10;
 
 export function agriCategoryOptions() {
-  return Object.entries(AGRI_CATEGORY_LABELS).map(([value, label]) => ({
-    value: value as AgriCategory,
-    label,
+  return (Object.keys(AGRI_CATEGORY_LABELS) as AgriCategory[]).map((value) => ({
+    value,
+    label: `${AGRI_CATEGORY_LABELS[value]} (${AGRI_CATEGORY_LABELS_HI[value]})`,
   }));
 }
 
