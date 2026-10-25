@@ -23,7 +23,13 @@ async function upsertUser(params: {
 }) {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const existing = await prisma.user.findFirst({ where: { phone: params.phone } });
-  return existing ?? prisma.user.create({ data: { ...params, passwordHash } });
+  if (existing) {
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: { name: params.name },
+    });
+  }
+  return prisma.user.create({ data: { ...params, passwordHash } });
 }
 
 type ProviderSeed = {
@@ -145,7 +151,7 @@ const AGRI_PROVIDERS: ProviderSeed[] = [
 
 const HEALTH_PROVIDERS: ProviderSeed[] = [
   {
-    name: "Kavita Gupta",
+    name: "Aarav Srivastava",
     phone: "9812341234",
     section: "HEALTH",
     healthCategory: "DOCTOR",
@@ -158,7 +164,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 35,
   },
   {
-    name: "Priya Sharma",
+    name: "Priya Sachan",
     phone: "9801231234",
     section: "HEALTH",
     healthCategory: "NURSE",
@@ -171,7 +177,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 19,
   },
   {
-    name: "Anjali Kumari",
+    name: "Anjali Chemist",
     phone: "9898761234",
     section: "HEALTH",
     healthCategory: "PHARMACY",
@@ -184,7 +190,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 14,
   },
   {
-    name: "Deepak Patel",
+    name: "Deepak Pathology",
     phone: "9887651234",
     section: "HEALTH",
     healthCategory: "PATHOLOGY_LAB",
@@ -197,7 +203,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 27,
   },
   {
-    name: "Meena Verma",
+    name: "Sudhanshu Srivastava",
     phone: "9876541234",
     section: "HEALTH",
     healthCategory: "PHYSIOTHERAPIST",
@@ -210,7 +216,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 16,
   },
   {
-    name: "Arjun Tiwari",
+    name: "Super Ambulance Service",
     phone: "9865431234",
     section: "HEALTH",
     healthCategory: "AMBULANCE",
@@ -223,7 +229,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 9,
   },
   {
-    name: "Anjali Kumari",
+    name: "Gaurav Shukla",
     phone: "9843211234",
     section: "HEALTH",
     healthCategory: "DOCTOR",
@@ -249,7 +255,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 0,
   },
   {
-    name: "Kavita Gupta",
+    name: "Kavita Pharmacy",
     phone: "9899881234",
     section: "HEALTH",
     healthCategory: "PHARMACY",
@@ -262,7 +268,7 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
     ratingCount: 12,
   },
   {
-    name: "Meena Verma",
+    name: "Arun Verma",
     phone: "9855441234",
     section: "HEALTH",
     healthCategory: "DOCTOR",
@@ -305,7 +311,9 @@ async function main() {
     const user = await upsertUser({ name: seed.name, phone: seed.phone, role: "PROVIDER" });
     const profile = await prisma.providerProfile.upsert({
       where: { userId: user.id },
-      update: {},
+      update: {
+        displayName: seed.name,
+      },
       create: {
         userId: user.id,
         displayName: seed.name,

@@ -49,7 +49,7 @@ const PHOTOS: Record<string, string[]> = {
     "photo-1712215544003-af10130f8eb3",
   ],
   NURSE: [
-    "photo-1624727828489-a1e03b79bba8",
+    "photo-1559839734-2b71ea197ec2",
     "photo-1584432810601-6c7f27d2362b",
     "photo-1576091160550-2173dba999ef",
     "photo-1638202993928-7267aad84c31",
@@ -83,7 +83,7 @@ const PHOTOS: Record<string, string[]> = {
 const FALLBACK = ["photo-1500382017468-9049fed747ef"]; // farm fields
 
 function photoUrl(id: string) {
-  return `https://images.unsplash.com/${id}?w=800&h=500&fit=crop&auto=format&q=70`;
+  return `https://images.unsplash.com/${id}?w=800&h=500&fit=crop&crop=faces,center&auto=format&q=70`;
 }
 
 export async function assignDemoPhotos(prisma: PrismaClient) {

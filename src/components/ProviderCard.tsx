@@ -38,19 +38,18 @@ export function ProviderCard({
         {provider.bio && <p className="mt-3 text-[0.95rem] leading-relaxed text-ink-soft">{provider.bio}</p>}
 
         <div className="mt-auto pt-4">
-          <p className="text-right text-sm font-medium text-ink">
-            {provider.ratingCount > 0 ? (
-              <>
-                {provider.ratingAvg.toFixed(1)} <span className="text-marigold">★</span> ({provider.ratingCount})
-              </>
-            ) : (
-              <span className="text-ink-faint">New provider</span>
-            )}
-          </p>
-          <p className="mt-2 text-sm text-ink-soft">
-            {provider.phone}
-            <span className="text-ink-faint"> · {provider.location}</span>
-          </p>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-ink-soft">{provider.location}</span>
+            <span className="font-medium text-ink">
+              {provider.ratingCount > 0 ? (
+                <>
+                  {provider.ratingAvg.toFixed(1)} <span className="text-marigold">★</span> ({provider.ratingCount})
+                </>
+              ) : (
+                <span className="text-ink-faint">New provider</span>
+              )}
+            </span>
+          </div>
           <div className="mt-4">
             <RequestServiceButton
               providerId={provider.id}
@@ -74,7 +73,7 @@ function ProviderPhoto({ provider }: { provider: ProviderProfileModel }) {
     return (
       // Provider photos come from arbitrary hosts, so a plain <img> rather than next/image.
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={provider.photoUrl} alt={provider.displayName} loading="lazy" className={`${box} object-cover`} />
+      <img src={provider.photoUrl} alt={provider.displayName} loading="lazy" className={`${box} object-cover object-top`} />
     );
   }
   const initials = provider.displayName

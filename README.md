@@ -45,7 +45,7 @@ All seeded accounts use the password `password123`.
 | Farmer (requester) | `9900000002` | Ramesh Yadav — has bookings in every stage of the payment lifecycle |
 | Coordinator | `9900000001` | Sunita Coordinator — full dashboard access |
 | Provider | `9871234567` | Priya Sharma, Drone Services (Agri) |
-| Provider | `9812341234` | Kavita Gupta, Doctor (Health) |
+| Provider | `9812341234` | Aarav Srivastava, Doctor (Health) |
 
 The seed script creates ~19 providers total across every Agri/Health category
 (mirroring the original prototype's directory) and a handful
