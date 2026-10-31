@@ -1,9 +1,9 @@
 /**
- * Changes an admin account's login phone and password.
+ * Changes a staff account's (admin or coordinator) login phone and password.
  *
- *   NEW_ADMIN_PASSWORD='…' npm run admin:set-credentials -- --from 9900000000 --phone 7389233671
+ *   NEW_PASSWORD='…' npm run admin:set-credentials -- --from 9900000000 --phone 7389233671
  *
- * The password is read from the NEW_ADMIN_PASSWORD environment variable so it
+ * The password is read from the NEW_PASSWORD environment variable so it
  * never lands in the code or in git. It's hashed the same way as sign-up, and
  * any outstanding password-reset links for the account are deleted.
  */
@@ -18,22 +18,23 @@ function arg(name: string) {
 
 const from = arg("from");
 const phone = arg("phone");
-const password = process.env.NEW_ADMIN_PASSWORD ?? "";
+const password = process.env.NEW_PASSWORD ?? process.env.NEW_ADMIN_PASSWORD ?? "";
 
 if (!from || !phone) {
-  console.error("Usage: NEW_ADMIN_PASSWORD='…' npm run admin:set-credentials -- --from <current phone> --phone <new phone>");
+  console.error("Usage: NEW_PASSWORD='…' npm run admin:set-credentials -- --from <current phone> --phone <new phone>");
   process.exit(1);
 }
 if (password.length < 8) {
-  console.error("Set NEW_ADMIN_PASSWORD to the new password (at least 8 characters).");
+  console.error("Set NEW_PASSWORD to the new password (at least 8 characters).");
   process.exit(1);
 }
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const admin = await prisma.user.findFirst({ where: { phone: from, role: "ADMIN" } });
-  if (!admin) throw new Error(`No admin account with phone ${from}`);
+  // Staff accounts only — farmers and providers change their own password.
+  const admin = await prisma.user.findFirst({ where: { phone: from, role: { in: ["ADMIN", "COORDINATOR"] } } });
+  if (!admin) throw new Error(`No admin or coordinator account with phone ${from}`);
 
   if (phone !== from) {
     const taken = await prisma.user.findFirst({ where: { phone } });
@@ -46,7 +47,7 @@ async function main() {
   });
   const resets = await prisma.passwordResetToken.deleteMany({ where: { userId: admin.id } });
 
-  console.log(`Updated ${admin.name}: login phone ${from} → ${phone}, new password set.`);
+  console.log(`Updated ${admin.name} (${admin.role}): login phone ${from} → ${phone}, new password set.`);
   if (resets.count) console.log(`Removed ${resets.count} pending password-reset link(s).`);
 }
 

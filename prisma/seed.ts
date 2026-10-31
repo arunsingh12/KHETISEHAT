@@ -328,12 +328,15 @@ async function main() {
     });
   }
 
-  await upsertUser({
-    name: "Sunita Coordinator",
-    phone: "9900000001",
-    email: "coordinator@khetisehat.test",
-    role: "COORDINATOR",
-  });
+  // Same for the demo coordinator.
+  if (!(await prisma.user.findFirst({ where: { role: "COORDINATOR" } }))) {
+    await upsertUser({
+      name: "Sunita Coordinator",
+      phone: "9900000001",
+      email: "coordinator@khetisehat.test",
+      role: "COORDINATOR",
+    });
+  }
 
   const farmer = await upsertUser({
     name: "Ramesh Yadav",
