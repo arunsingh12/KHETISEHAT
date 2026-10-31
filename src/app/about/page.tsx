@@ -1,3 +1,4 @@
+import { AGRI_CATALOG, CURRENT_AGRI_CATEGORIES } from "@/lib/agri-catalog";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -16,8 +17,8 @@ const HALVES = [
     title: "Kheti — for the farm",
     tone: "bg-brand text-white",
     accent: "text-[#bfe3a0]",
-    body: "Drone spraying, tractor and equipment rental, soil testing, agronomist visits and solar pump services — booked from your phone, from people who are verified.",
-    items: ["Drone services", "Equipment rental", "Soil testing", "Agronomists", "Solar services"],
+    body: "Soil and water testing, crop advice, seeds and inputs, tractors and drones, irrigation, farm labour, storage, transport, livestock care and help with loans and schemes — booked from your phone, from people who are verified.",
+    items: CURRENT_AGRI_CATEGORIES.map((c) => AGRI_CATALOG[c].label),
   },
   {
     word: "सेहत",

@@ -12,7 +12,8 @@
     "db:push": "prisma db push && tsx prisma/mongo-indexes.ts",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "db:demo-photos": "tsx prisma/demo-photos.ts"
+    "db:demo-photos": "tsx prisma/demo-photos.ts",
+    "db:migrate-categories": "tsx prisma/migrate-agri-categories.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

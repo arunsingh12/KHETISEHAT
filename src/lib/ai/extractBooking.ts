@@ -10,6 +10,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { AgriCategory, HealthCategory, Section } from "@/generated/prisma/enums";
+import { AGRI_CATALOG, CURRENT_AGRI_CATEGORIES } from "@/lib/agri-catalog";
 
 export type Confidence = "high" | "medium" | "low";
 
@@ -32,7 +33,13 @@ export type ExtractedBooking = {
 };
 
 const SECTION_VALUES = Object.values(Section);
-const AGRI_VALUES = Object.values(AgriCategory);
+/** "CODE: Label — service, service, …" lines, so the model knows what each code covers. */
+const AGRI_CATEGORY_GUIDE = CURRENT_AGRI_CATEGORIES.map(
+  (c) => `${c}: ${AGRI_CATALOG[c].label} — ${AGRI_CATALOG[c].services.map((s) => s.label).join(", ")}`,
+).join("\n");
+
+// Only current categories — old codes are never offered to the model.
+const AGRI_VALUES = CURRENT_AGRI_CATEGORIES as AgriCategory[];
 const HEALTH_VALUES = Object.values(HealthCategory);
 
 const TOOL_SCHEMA = {
@@ -115,12 +122,14 @@ async function extractWithAnthropic(message: string, apiKey: string): Promise<Ex
   const anthropic = new Anthropic({ apiKey });
 
   const response = await anthropic.messages.create({
-    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
+    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
     max_tokens: 1024,
     system:
       "You extract service-booking details from WhatsApp messages sent by farmers in rural India, in Hindi, English, or Hinglish. " +
       "Always call the record_booking tool. Use 'unknown' for a category field you cannot place, " +
-      "and mark your own confidence honestly — 'low' for anything guessed or inferred rather than stated.",
+      "and mark your own confidence honestly — 'low' for anything guessed or inferred rather than stated.\n\n" +
+      "Agri categories (agriCategory code: what it covers):\n" +
+      AGRI_CATEGORY_GUIDE,
     tools: [TOOL_SCHEMA],
     tool_choice: { type: "tool", name: "record_booking" },
     messages: [{ role: "user", content: message }],
@@ -159,18 +168,19 @@ async function extractWithAnthropic(message: string, apiKey: string): Promise<Ex
 
 // First match wins, so the more specific categories come first.
 const AGRI_KEYWORDS: [RegExp, AgriCategory][] = [
-  [/drone|ड्रोन|छिड़काव|spray/i, "DRONE_SERVICES"],
-  [/scheme|yojana|योजना|subsidy|सब्सिडी|\bfpo\b|एफपीओ|pm[- ]?kisan|kcc|kisan credit/i, "GOVT_SCHEMES_FPO"],
-  [/poly ?house|पॉलीहाउस|green ?house|net ?house|hydroponic|smart farm|स्मार्ट फार्मिंग/i, "PROTECTED_CULTIVATION"],
-  [/fish|मछली|मत्स्य|pond|तालाब|aquacultur|prawn|shrimp/i, "FISHERY_AQUACULTURE"],
-  [/poultry|पोल्ट्री|murgi|मुर्गी|chicken|broiler|piggery|सूअर|pig\b/i, "POULTRY_PIGGERY"],
-  [/dairy|डेयरी|cow|गाय|buffalo|भैंस|cattle|पशु|livestock|goat|बकरी|vet(erinar)?/i, "DAIRY_LIVESTOCK"],
-  [/labou?r|मजदूर|majdoor|sowing|बुवाई|transplant|रोपाई|weeding|निराई|crew/i, "FARM_LABOR"],
-  [/cold storage|कोल्ड स्टोरेज|mandi|मंडी|transport|परिवहन|warehouse|गोदाम|post[- ]?harvest/i, "POST_HARVEST_LOGISTICS"],
-  [/soil test|water test|leaf test|मिट्टी जांच|मिट्टी परीक्षण|पानी की जांच/i, "SOIL_TESTING"],
-  [/solar|सोलर|सौर|irrigation|सिंचाई|drip|ड्रिप|sprinkler|borewell|बोरवेल/i, "SOLAR_SERVICES"],
-  [/tractor|ट्रैक्टर|equipment|किराया|rental|harvester|thresher|machinery|मशीनरी/i, "EQUIPMENT_RENTAL"],
-  [/agronomist|कृषि विशेषज्ञ|crop advi[cs]e|फसल सलाह|pest|कीट|disease|रोग/i, "AGRONOMIST"],
+  [/loan|ऋण|कर्ज|insurance|बीमा|scheme|yojana|योजना|subsidy|सब्सिडी|pm[- ]?kisan|kcc|kisan credit|certif/i, "FINANCE_INSURANCE_DOCS"],
+  [/\bfpo\b|एफपीओ|training|प्रशिक्षण|record keeping/i, "FARM_BUSINESS_TRAINING"],
+  [/poly ?house|पॉलीहाउस|green ?house|shade ?net|net ?house/i, "PROTECTED_CULTIVATION"],
+  [/fish|machh?li|talaa?b|gaa?y\b|bhains|bakri|pashu|मछली|मत्स्य|pond|तालाब|aquacultur|poultry|पोल्ट्री|murgi|मुर्गी|dairy|डेयरी|cow|गाय|buffalo|भैंस|cattle|पशु|livestock|goat|बकरी|vet(erinar)?|bee ?keep|मधुमक्खी|fodder|चारा/i, "LIVESTOCK_ALLIED"],
+  [/seed|बीज|nursery|नर्सरी|sapling|पौध/i, "SEEDS_PLANTING_MATERIAL"],
+  [/fertili[sz]er|खाद|उर्वरक|urea|यूरिया|dap\b|compost|pesticide|कीटनाशक|manure/i, "FERTILISERS_CROP_PROTECTION"],
+  [/cold storage|कोल्ड स्टोरेज|warehouse|गोदाम|grading|packag|drying|सुखा|processing/i, "POST_HARVEST_STORAGE"],
+  [/mandi|मंडी|transport|परिवहन|truck|ट्रक|buyer|खरीद|export|market/i, "TRANSPORT_MARKETING"],
+  [/soil test|water test|leaf test|tissue test|मिट्टी जांच|मिट्टी परीक्षण|पानी की जांच/i, "SOIL_WATER_TESTING"],
+  [/irrigation|सिंचाई|drip|ड्रिप|sprinkler|borewell|बोरवेल|pump|पंप|solar|सोलर/i, "IRRIGATION_WATER"],
+  [/labou?r|मजदूर|majdoor|worker/i, "FARM_LABOUR"],
+  [/drone|ड्रोन|spray|छिड़काव|tractor|ट्रैक्टर|harvester|thresher|कटाई|rental|किराया|machinery|मशीनरी|sowing|बुवाई|ropai|रोपाई|weeding|निराई|plough|जुताई/i, "FARM_MACHINERY"],
+  [/agronomist|कृषि विशेषज्ञ|crop advi[cs]e|फसल सलाह|pest|कीट|disease|रोग|organic/i, "CROP_ADVISORY"],
 ];
 
 const HEALTH_KEYWORDS: [RegExp, HealthCategory][] = [

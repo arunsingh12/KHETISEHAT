@@ -29,21 +29,46 @@ enum Section {
   HEALTH
 }
 
-// The first five keep their original codes (labels changed in
-// src/lib/constants.ts) so existing providers and bookings stay valid.
+// Primary agri category — the taxonomy (labels, services under each) lives in
+// src/lib/agri-catalog.ts.
 enum AgriCategory {
+  SOIL_WATER_TESTING
+  CROP_ADVISORY
+  SEEDS_PLANTING_MATERIAL
+  FERTILISERS_CROP_PROTECTION
+  FARM_MACHINERY
+  IRRIGATION_WATER
+  FARM_LABOUR
+  PROTECTED_CULTIVATION
+  POST_HARVEST_STORAGE
+  TRANSPORT_MARKETING
+  LIVESTOCK_ALLIED
+  FINANCE_INSURANCE_DOCS
+  FARM_BUSINESS_TRAINING
+  OTHER
+
+  // Legacy codes from the previous list — kept only so records saved before
+  // the switch still load. prisma/migrate-agri-categories.ts moves them to
+  // the new codes; never offered in forms or filters.
   DRONE_SERVICES
   EQUIPMENT_RENTAL
-  AGRONOMIST // Agronomist & Crop Advisory
-  SOIL_TESTING // Soil, Water & Leaf Testing
-  SOLAR_SERVICES // Solar & Irrigation Installation
+  AGRONOMIST
+  SOIL_TESTING
+  SOLAR_SERVICES
   DAIRY_LIVESTOCK
   FISHERY_AQUACULTURE
   POULTRY_PIGGERY
-  PROTECTED_CULTIVATION
   FARM_LABOR
   POST_HARVEST_LOGISTICS
   GOVT_SCHEMES_FPO
+}
+
+// How a provider delivers their service (a provider can tick several).
+enum DeliveryMethod {
+  FARM_VISIT
+  PROVIDER_LOCATION
+  REMOTE_CONSULTATION
+  PICKUP_DELIVERY
 }
 
 enum HealthCategory {
@@ -135,6 +160,25 @@ model ProviderProfile {
   availability   String?
   ayushmanStatus AyushmanStatus?
   photoUrl       String?
+
+  // Services this provider lists under their primary agri category — ids from
+  // src/lib/agri-catalog.ts. Self-declared: listing a service is not the same
+  // as Kheti Sehat verifying it (see `verified` below).
+  agriServices String[] @default([])
+  otherService String? // free text when "Other — Please Specify" is selected
+
+  // Where they work.
+  serviceState     String?
+  serviceDistricts String[]         @default([])
+  serviceVillages  String[]         @default([]) // village names or 6-digit pincodes
+  deliveryMethods  DeliveryMethod[] @default([])
+
+  // Credentials and pricing — self-declared, kept separate from verification.
+  qualifications String?
+  licences       String? // licence / registration numbers
+  pricingNote    String? // e.g. "₹500 per acre for drone spraying"
+
+  // Set only by a coordinator/admin after checking the provider.
   verified       Boolean         @default(true)
   commissionRate Float           @default(10)
   ratingAvg      Float           @default(0)

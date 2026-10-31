@@ -1,4 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { parsePlaceList, storedCodesFor } from "@/lib/agri-catalog";
+import { AgriCategory as AgriCategoryEnum, HealthCategory as HealthCategoryEnum } from "@/generated/prisma/enums";
+
+const AGRI_VALUES = new Set<string>(Object.values(AgriCategoryEnum));
+const HEALTH_VALUES = new Set<string>(Object.values(HealthCategoryEnum));
 import type {
   AgriCategory,
   AyushmanStatus,
@@ -6,15 +11,37 @@ import type {
   Role,
 } from "@/generated/prisma/enums";
 
-export function listAgriProviders(filters: { category?: AgriCategory; location?: string }) {
+/**
+ * Free-text location search: matches the provider's base location, state,
+ * and — exactly, after the same tidying the profile form applies — any
+ * district, village or pincode in their service area.
+ */
+function locationFilter(location: string | undefined) {
+  const term = location?.trim();
+  if (!term) return {};
+  const tidy = parsePlaceList(term)[0] ?? term;
+  return {
+    OR: [
+      { location: { contains: term, mode: "insensitive" as const } },
+      { district: { contains: term, mode: "insensitive" as const } },
+      { serviceState: { contains: term, mode: "insensitive" as const } },
+      { serviceDistricts: { has: tidy } },
+      { serviceVillages: { has: tidy } },
+    ],
+  };
+}
+
+export function listAgriProviders(filters: { category?: AgriCategory; service?: string; location?: string }) {
   return prisma.providerProfile.findMany({
     where: {
       section: "AGRI",
       verified: true,
-      ...(filters.category ? { agriCategory: filters.category } : {}),
-      ...(filters.location
-        ? { location: { contains: filters.location } }
+      // Ignore unknown values from the URL instead of failing the query.
+      ...(filters.category && AGRI_VALUES.has(filters.category)
+        ? { agriCategory: { in: storedCodesFor(filters.category) } }
         : {}),
+      ...(filters.service ? { agriServices: { has: filters.service } } : {}),
+      ...locationFilter(filters.location),
     },
     orderBy: { ratingAvg: "desc" },
   });
@@ -29,8 +56,8 @@ export function listHealthProviders(filters: {
     where: {
       section: "HEALTH",
       verified: true,
-      ...(filters.category ? { healthCategory: filters.category } : {}),
-      ...(filters.location ? { location: { contains: filters.location } } : {}),
+      ...(filters.category && HEALTH_VALUES.has(filters.category) ? { healthCategory: filters.category } : {}),
+      ...locationFilter(filters.location),
       ...(filters.ayushman ? { ayushmanStatus: filters.ayushman } : {}),
     },
     orderBy: { ratingAvg: "desc" },

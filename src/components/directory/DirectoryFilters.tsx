@@ -1,7 +1,8 @@
 import { AYUSHMAN_LABELS, agriCategoryOptions, healthCategoryOptions } from "@/lib/constants";
+import { AGRI_CATALOG, CURRENT_AGRI_CATEGORIES } from "@/lib/agri-catalog";
 import { inputClass, labelClass } from "@/lib/ui";
 
-/** Category / location (/ Ayushman) search bar shared by the home page and the service directories. */
+/** Category / service / location (/ Ayushman) search bar shared by the home page and the service directories. */
 export function DirectoryFilters({
   section,
   action,
@@ -11,7 +12,7 @@ export function DirectoryFilters({
   section: "agri" | "health";
   /** Where the GET form submits — the directory page, or the home page. */
   action: string;
-  values: { category?: string; location?: string; ayushman?: string };
+  values: { category?: string; service?: string; location?: string; ayushman?: string };
   /** Extra query params to keep (e.g. the home page's selected tab). */
   hidden?: Record<string, string>;
 }) {
@@ -22,7 +23,7 @@ export function DirectoryFilters({
     <form
       action={action}
       className={`grid gap-4 rounded-2xl border border-line bg-surface p-5 shadow-sm sm:items-end ${
-        isHealth ? "sm:grid-cols-[1fr_1fr_1fr_auto]" : "sm:grid-cols-[minmax(0,18rem)_minmax(0,18rem)_auto] sm:justify-start"
+        "sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]"
       }`}
     >
       {hidden && Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
@@ -37,12 +38,29 @@ export function DirectoryFilters({
           ))}
         </select>
       </div>
+      {!isHealth && (
+        <div>
+          <label className={labelClass}>Service</label>
+          <select name="service" defaultValue={values.service ?? ""} className={inputClass}>
+            <option value="">All Services</option>
+            {CURRENT_AGRI_CATEGORIES.map((c) => (
+              <optgroup key={c} label={AGRI_CATALOG[c].label}>
+                {AGRI_CATALOG[c].services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+      )}
       <div>
         <label className={labelClass}>Location</label>
         <input
           name="location"
           defaultValue={values.location ?? ""}
-          placeholder="Enter village or district"
+          placeholder="Village, pincode or district"
           className={inputClass}
         />
       </div>

@@ -100,6 +100,16 @@ Restart the app after adding the secret.
 If you changed `prisma/schema.prisma`, also run `npm run db:push` once from
 your computer with the production `DATABASE_URL`.
 
+**One-time, after deploying the new agri categories:** move existing
+providers and bookings from the old category codes. Check the dry run first,
+then apply — only once the new version is live, since the old version can't
+read the new codes:
+
+```bash
+npm run db:migrate-categories
+npm run db:migrate-categories -- --apply
+```
+
 ## Troubleshooting
 
 - **Errors / blank page:** check `stderr.log` in the application root.

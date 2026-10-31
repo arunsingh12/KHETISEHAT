@@ -4,6 +4,7 @@ import { RatingStars } from "@/components/RatingStars";
 import { Badge } from "@/components/ui/Badge";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { AGRI_CATEGORY_LABELS, HEALTH_CATEGORY_LABELS } from "@/lib/constants";
+import { ProviderClaims } from "@/components/coordinator/ProviderClaims";
 
 export default async function ProviderVerificationPage() {
   const [unverified, lowRated] = await Promise.all([getUnverifiedProviders(), getLowRatedProviders()]);
@@ -18,12 +19,11 @@ export default async function ProviderVerificationPage() {
       ) : (
         <div className="mt-2 space-y-2">
           {unverified.map((p) => (
-            <div key={p.id} className="flex items-center justify-between rounded-xl border border-line bg-surface p-4">
-              <div>
+            <div key={p.id} className="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-line bg-surface p-4">
+              <div className="min-w-0 flex-1">
                 <p className="font-medium">{p.displayName}</p>
-                <p className="text-sm text-ink-soft">
-                  {p.agriCategory ? AGRI_CATEGORY_LABELS[p.agriCategory] : p.healthCategory ? HEALTH_CATEGORY_LABELS[p.healthCategory] : ""} · {p.location}
-                </p>
+                <p className="text-xs text-ink-faint">Self-declared by the provider — check before verifying.</p>
+                <ProviderClaims provider={p} />
               </div>
               <form action={verifyProvider}>
                 <input type="hidden" name="providerId" value={p.id} />

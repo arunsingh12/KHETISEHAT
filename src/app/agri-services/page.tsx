@@ -7,13 +7,14 @@ import type { AgriCategory } from "@/generated/prisma/enums";
 export default async function AgriServicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; location?: string }>;
+  searchParams: Promise<{ category?: string; service?: string; location?: string }>;
 }) {
   const sp = await searchParams;
   const [session, providers] = await Promise.all([
     auth(),
     listAgriProviders({
       category: (sp.category as AgriCategory) || undefined,
+      service: sp.service || undefined,
       location: sp.location || undefined,
     }),
   ]);

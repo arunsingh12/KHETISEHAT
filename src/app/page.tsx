@@ -12,12 +12,13 @@ import { HeroScene } from "@/components/home/HeroScene";
 import { WorkflowTabs } from "@/components/home/WorkflowTabs";
 import type { AgriCategory, AyushmanStatus, HealthCategory } from "@/generated/prisma/enums";
 
-// One-tap shortcuts in the hero's split strip.
-const AGRI_PICKS: { category: AgriCategory; label: string }[] = [
-  { category: "DRONE_SERVICES", label: "Drone · ड्रोन" },
-  { category: "SOIL_TESTING", label: "Soil test · मिट्टी जाँच" },
-  { category: "AGRONOMIST", label: "Agronomist" },
-  { category: "EQUIPMENT_RENTAL", label: "Equipment" },
+// One-tap shortcuts in the hero's split strip (category, optionally narrowed to one service).
+const AGRI_PICKS: { category: AgriCategory; service?: string; label: string }[] = [
+  { category: "FARM_MACHINERY", service: "drone-services", label: "Drone · ड्रोन" },
+  { category: "SOIL_WATER_TESTING", service: "soil-testing", label: "Soil test · मिट्टी जाँच" },
+  { category: "CROP_ADVISORY", label: "Crop advice · फसल सलाह" },
+  { category: "FARM_MACHINERY", service: "tractor-implement-rental", label: "Tractor · ट्रैक्टर" },
+  { category: "LIVESTOCK_ALLIED", label: "Livestock · पशुपालन" },
 ];
 const HEALTH_PICKS: { category: HealthCategory; label: string }[] = [
   { category: "DOCTOR", label: "Doctor · डॉक्टर" },
@@ -61,7 +62,7 @@ const ROLES = [
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; category?: string; location?: string; ayushman?: string }>;
+  searchParams: Promise<{ tab?: string; category?: string; service?: string; location?: string; ayushman?: string }>;
 }) {
   const sp = await searchParams;
   const tab = sp.tab === "health" ? "health" : "agri";
@@ -77,6 +78,7 @@ export default async function HomePage({
         })
       : listAgriProviders({
           category: (sp.category as AgriCategory) || undefined,
+          service: sp.service || undefined,
           location: sp.location || undefined,
         }),
   ]);
@@ -191,8 +193,8 @@ export default async function HomePage({
             <span className="mr-1 font-display text-lg font-bold text-[#bfe3a0]">खेती</span>
             {AGRI_PICKS.map((p) => (
               <Link
-                key={p.category}
-                href={`/?tab=agri&category=${p.category}#providers`}
+                key={p.label}
+                href={`/?tab=agri&category=${p.category}${p.service ? `&service=${p.service}` : ""}#providers`}
                 className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-white hover:text-brand-deep"
               >
                 {p.label}

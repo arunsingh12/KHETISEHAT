@@ -8,35 +8,45 @@
  */
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
+import type { ProviderProfileModel } from "../src/generated/prisma/models";
+import { currentAgriCategory } from "../src/lib/agri-catalog";
 
+function photoKey(p: ProviderProfileModel) {
+  if (p.agriServices.includes("drone-services")) return "drone-services";
+  if (p.agriCategory) return currentAgriCategory(p.agriCategory);
+  return p.healthCategory ?? "";
+}
+
+// Keyed by agri service id (drone vs tractor look different), current agri
+// category, or health category — see photoKey().
 const PHOTOS: Record<string, string[]> = {
-  DRONE_SERVICES: [
+  "drone-services": [
     "photo-1560493676-04071c5f467b",
     "photo-1656407410275-e63e689bcd90",
     "photo-1627920769541-daa658ed6b59",
     "photo-1713952160156-bb59cac789a9",
     "photo-1627920769842-6887c6df05ca",
   ],
-  EQUIPMENT_RENTAL: [
+  FARM_MACHINERY: [
     "photo-1696441567908-6a04d49e1350",
     "photo-1571509107684-7e3034a90012",
     "photo-1685335686020-e0b487f7f426",
     "photo-1718470684824-3c53a74523bc",
     "photo-1683552515328-5a8d58755e9c",
   ],
-  AGRONOMIST: [
+  CROP_ADVISORY: [
     "photo-1620901433789-1d2f85a93653",
     "photo-1492496913980-501348b61469",
     "photo-1530507629858-e4977d30e9e0",
     "photo-1623211269755-569fec0536d2",
   ],
-  SOIL_TESTING: [
+  SOIL_WATER_TESTING: [
     "photo-1562722902-d33533894eea",
     "photo-1618212624319-3cd9681707e2",
     "photo-1557234195-bd9f290f0e4d",
     "photo-1763844599737-be3850c60cea",
   ],
-  SOLAR_SERVICES: [
+  IRRIGATION_WATER: [
     "photo-1509391366360-2e959784a276",
     "photo-1558449028-b53a39d100fc",
     "photo-1724041875334-0a6397111c7e",
@@ -95,7 +105,7 @@ export async function assignDemoPhotos(prisma: PrismaClient) {
 
   const used: Record<string, number> = {};
   for (const p of providers) {
-    const category = p.agriCategory ?? p.healthCategory ?? "";
+    const category = photoKey(p);
     const pool = PHOTOS[category] ?? FALLBACK;
     const i = used[category] ?? 0;
     used[category] = i + 1;

@@ -18,8 +18,16 @@ export async function updateProviderProfile(
     section: formData.get("section"),
     agriCategory: formData.get("agriCategory") || undefined,
     healthCategory: formData.get("healthCategory") || undefined,
+    agriServices: formData.getAll("agriServices").map(String),
+    otherService: formData.get("otherService") ?? undefined,
     location: formData.get("location"),
-    district: formData.get("district") || undefined,
+    serviceState: formData.get("serviceState") || undefined,
+    serviceDistricts: String(formData.get("serviceDistricts") ?? ""),
+    serviceVillages: String(formData.get("serviceVillages") ?? ""),
+    deliveryMethods: formData.getAll("deliveryMethods").map(String),
+    qualifications: formData.get("qualifications") ?? undefined,
+    licences: formData.get("licences") ?? undefined,
+    pricingNote: formData.get("pricingNote") ?? undefined,
     phone: formData.get("phone"),
     availability: formData.get("availability") || undefined,
     ayushmanStatus: formData.get("ayushmanStatus") || undefined,
@@ -41,7 +49,13 @@ export async function updateProviderProfile(
 
   await prisma.providerProfile.update({
     where: { userId: user.id },
-    data: { ...data, photoUrl: data.photoUrl || null, payoutKycComplete },
+    data: {
+      ...data,
+      // Older screens read the single `district` field — keep it as the first service district.
+      district: data.serviceDistricts[0] ?? null,
+      photoUrl: data.photoUrl || null,
+      payoutKycComplete,
+    },
   });
 
   revalidatePath("/provider");
