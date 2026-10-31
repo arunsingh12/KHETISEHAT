@@ -317,12 +317,16 @@ const HEALTH_PROVIDERS: ProviderSeed[] = [
 async function main() {
   console.log("Seeding admin, coordinator, farmer and providers…");
 
-  await upsertUser({
-    name: "Anita Admin",
-    phone: "9900000000",
-    email: "admin@khetisehat.test",
-    role: "ADMIN",
-  });
+  // Never recreate the demo admin where a real admin already exists (e.g. if
+  // the seed is ever run against production) — it has a public password.
+  if (!(await prisma.user.findFirst({ where: { role: "ADMIN" } }))) {
+    await upsertUser({
+      name: "Anita Admin",
+      phone: "9900000000",
+      email: "admin@khetisehat.test",
+      role: "ADMIN",
+    });
+  }
 
   await upsertUser({
     name: "Sunita Coordinator",

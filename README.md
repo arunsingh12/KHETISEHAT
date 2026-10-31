@@ -41,7 +41,7 @@ All seeded accounts use the password `password123`.
 
 | Role | Phone | Notes |
 |---|---|---|
-| Admin | `9900000000` | Anita Admin — platform-wide dashboard |
+| Admin | `9900000000` | Anita Admin — only created on a database with no admin yet. On the live site the admin login has been changed (`npm run admin:set-credentials`). |
 | Farmer (requester) | `9900000002` | Ramesh Yadav — has bookings in every stage of the payment lifecycle |
 | Coordinator | `9900000001` | Sunita Coordinator — full dashboard access |
 | Provider | `9871234567` | Priya Sharma, Drone Services (Agri) |
