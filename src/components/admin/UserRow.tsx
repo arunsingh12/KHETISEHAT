@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import Link from "next/link";
 
 import { toggleUserActiveAction, updateUserRoleAction } from "@/actions/admin";
 import { Badge } from "@/components/ui/Badge";
@@ -22,7 +23,14 @@ export function UserRow({
     <tr className="border-b border-line-soft last:border-0">
       <td className="px-4 py-3">
         <p className="font-medium">
-          {user.name} {isSelf && <span className="text-xs text-ink-faint">(you)</span>}
+          {user.role === "FARMER" || user.role === "PROVIDER" ? (
+            <Link href={`/admin/people/${user.id}`} className="text-brand hover:text-brand-deep">
+              {user.name}
+            </Link>
+          ) : (
+            user.name
+          )}{" "}
+          {isSelf && <span className="text-xs text-ink-faint">(you)</span>}
         </p>
         <p className="text-xs text-ink-faint">{user.email ?? user.phone ?? "—"}</p>
       </td>

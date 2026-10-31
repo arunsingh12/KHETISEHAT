@@ -62,8 +62,18 @@ export async function updateUserRoleAction(
     return { ok: false, error: "You can't remove your own admin access" };
   }
 
-  await prisma.user.update({ where: { id: parsed.data.userId }, data: { role: parsed.data.role } });
-  revalidatePath("/admin/users");
+  const user = await prisma.user.update({
+    where: { id: parsed.data.userId },
+    data: { role: parsed.data.role },
+    include: { providerProfile: true },
+  });
+  // A new provider needs a profile to be listed and booked; start it unverified.
+  if (parsed.data.role === "PROVIDER" && !user.providerProfile) {
+    await prisma.providerProfile.create({
+      data: { userId: user.id, displayName: user.name, section: "AGRI", location: "", phone: user.phone ?? "", verified: false },
+    });
+  }
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
 
@@ -132,7 +142,7 @@ export async function setProviderCommissionAction(
     where: { id: parsed.data.providerId },
     data: { commissionRate: parsed.data.commissionRate },
   });
-  revalidatePath("/admin/providers");
-  revalidatePath("/coordinator/payouts");
+  revalidatePath("/admin", "layout");
+  revalidatePath("/coordinator", "layout");
   return { ok: true };
 }

@@ -59,6 +59,55 @@ export const createCoordinatorSchema = z
     };
   });
 
+// ---------- staff managing farmers & providers ----------
+
+const peopleRoles = ["FARMER", "PROVIDER"] as const;
+const phoneField = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/[\s-]/g, ""))
+  .refine((v) => v === "" || /^\+?\d{10,13}$/.test(v), "Enter a valid phone number (10 digits)");
+
+/** Staff create a farmer or provider account (e.g. for someone without a smartphone). */
+export const createPersonSchema = z
+  .object({
+    role: z.enum(peopleRoles),
+    name: z.string().trim().min(2, "Enter the full name"),
+    identifier: z.string().trim().min(3, "Enter a phone number or email"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  })
+  .transform((data) => {
+    const isEmail = data.identifier.includes("@");
+    return {
+      ...data,
+      email: isEmail ? data.identifier.toLowerCase() : undefined,
+      phone: isEmail ? undefined : data.identifier.replace(/[\s-]/g, ""),
+    };
+  });
+
+export const updateAccountSchema = z
+  .object({
+    userId: z.string().min(1),
+    name: z.string().trim().min(2, "Enter the full name"),
+    phone: phoneField,
+    email: z.union([z.literal(""), z.email("Enter a valid email")]),
+  })
+  .refine((d) => d.phone || d.email, { message: "Keep at least a phone number or an email to log in with" })
+  .transform((d) => ({ ...d, phone: d.phone || null, email: d.email ? d.email.toLowerCase() : null }));
+
+export const setPasswordSchema = z.object({
+  userId: z.string().min(1),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+/** Staff book a service on a farmer's behalf. */
+export const staffBookingSchema = z.object({
+  farmerId: z.string().min(1),
+  providerId: z.string().min(1, "Choose a provider"),
+  description: z.string().trim().min(5, "Describe what the farmer needs"),
+  preferredDate: z.string().optional(),
+});
+
 export const loginSchema = z.object({
   identifier: z.string().trim().min(3),
   password: z.string().min(1),

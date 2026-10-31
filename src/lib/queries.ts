@@ -188,6 +188,58 @@ export function getRecentPayouts() {
   });
 }
 
+// ---------- farmers & providers (admin + coordinator) ----------
+
+export type PeopleRole = "FARMER" | "PROVIDER";
+
+/** Farmers and providers for the staff people list, with booking counts. */
+export function listPeople(filters: { role?: PeopleRole; q?: string; status?: "active" | "disabled" | "unverified" }) {
+  const q = filters.q?.trim();
+  return prisma.user.findMany({
+    where: {
+      role: filters.role ? filters.role : { in: ["FARMER", "PROVIDER"] },
+      ...(filters.status === "active" ? { active: true } : {}),
+      ...(filters.status === "disabled" ? { active: false } : {}),
+      ...(filters.status === "unverified" ? { providerProfile: { is: { verified: false } } } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              { email: { contains: q, mode: "insensitive" as const } },
+              { phone: { contains: q } },
+            ],
+          }
+        : {}),
+    },
+    include: {
+      providerProfile: { include: { _count: { select: { bookings: true } } } },
+      _count: { select: { bookings: true } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 300,
+  });
+}
+
+/** One farmer or provider with everything staff need: profile and bookings (either side). */
+export async function getPerson(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { providerProfile: true } });
+  if (!user || (user.role !== "FARMER" && user.role !== "PROVIDER")) return null;
+  const bookings = await prisma.booking.findMany({
+    where: user.providerProfile ? { providerId: user.providerProfile.id } : { farmerId: user.id },
+    include: { farmer: true, provider: true, rating: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return { user, bookings };
+}
+
+/** Verified providers to pick from when staff book on a farmer's behalf. */
+export function getBookableProviders() {
+  return prisma.providerProfile.findMany({
+    where: { verified: true, user: { active: true } },
+    orderBy: [{ section: "asc" }, { displayName: "asc" }],
+  });
+}
+
 export function getAllUsers(filters: { role?: Role; q?: string } = {}) {
   return prisma.user.findMany({
     where: {
