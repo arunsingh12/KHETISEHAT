@@ -309,3 +309,15 @@ model PasswordResetToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 }
+
+// Uploaded images (provider profile photos), stored in the database so they
+// survive redeploys and are part of database backups. Served by
+// /api/photos/[id]; the image is resized in the browser before upload.
+model Photo {
+  id           String   @id @default(cuid()) @map("_id")
+  data         Bytes
+  contentType  String // image/jpeg | image/png | image/webp
+  size         Int
+  uploadedById String
+  createdAt    DateTime @default(now())
+}

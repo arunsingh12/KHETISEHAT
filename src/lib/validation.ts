@@ -181,14 +181,16 @@ export const updateProviderProfileSchema = z
     // Self-declared credentials and pricing — separate from verification.
     qualifications: optionalText(500),
     licences: optionalText(500),
-    pricingNote: optionalText(300),
+    pricingNote: optionalText(1000),
     bankAccountNumber: z.string().trim().optional(),
     bankIfsc: z.string().trim().optional(),
     upiId: z.string().trim().optional(),
     panNumber: z.string().trim().optional(),
-    // Shown on the provider's directory card; empty clears it.
+    // Shown on the provider's directory card; empty clears it. Either an
+    // uploaded photo (/api/photos/<id>) or an older external link.
     photoUrl: z.union([
       z.literal(""),
+      z.string().regex(/^\/api\/photos\/[a-z0-9]{20,40}$/),
       z.url({ protocol: /^https?$/, error: "Photo link must start with http:// or https://" }),
     ]),
   })

@@ -3,6 +3,7 @@ import { inputClass, labelClass } from "@/lib/ui";
 import { AYUSHMAN_LABELS } from "@/lib/constants";
 import { DELIVERY_METHOD_HINTS, DELIVERY_METHOD_LABELS, INDIAN_STATES } from "@/lib/agri-catalog";
 import { ServiceFields } from "@/components/provider/ServiceFields";
+import { PhotoUpload } from "@/components/provider/PhotoUpload";
 import type { DeliveryMethod } from "@/generated/prisma/enums";
 import type { ProviderProfileModel } from "@/generated/prisma/models";
 import type { ActionResult } from "@/lib/types";
@@ -127,20 +128,11 @@ export function ProviderProfileForm({
         <label className={labelClass}>Contact Details</label>
         <input name="phone" defaultValue={profile.phone} required className={inputClass} />
       </div>
-      <div>
-        <label className={labelClass}>Photo link</label>
-        <input
-          name="photoUrl"
-          type="url"
-          defaultValue={profile.photoUrl ?? ""}
-          placeholder="https://… (a photo of you or your equipment)"
-          className={inputClass}
-        />
-        <p className="mt-1 text-xs text-ink-faint">Shown at the top of your card in the service directory.</p>
-      </div>
+      <PhotoUpload initialUrl={profile.photoUrl} name={profile.displayName} />
       <div>
         <label className={labelClass}>Description</label>
-        <textarea name="bio" defaultValue={profile.bio ?? ""} rows={3} className={inputClass} />
+        <textarea name="bio" defaultValue={profile.bio ?? ""} rows={6} className={inputClass} />
+        <p className="mt-1 text-xs text-ink-faint">Line breaks, headings and bullet points are kept on your profile.</p>
       </div>
       <div>
         <label className={labelClass}>Ayushman Empanelment (Health Providers)</label>
@@ -183,11 +175,12 @@ export function ProviderProfileForm({
       </div>
       <div>
         <label className={labelClass}>Pricing</label>
-        <input
+        <textarea
           name="pricingNote"
           defaultValue={profile.pricingNote ?? ""}
-          maxLength={300}
-          placeholder="e.g. ₹500 per acre for drone spraying; soil test ₹300 per sample"
+          maxLength={1000}
+          rows={4}
+          placeholder={"e.g.\nDrone spraying — ₹500 per acre\nSoil test — ₹300 per sample"}
           className={inputClass}
         />
         <p className="mt-1 text-xs text-ink-faint">Shown on your directory card as a guide. You still set the final price on each booking.</p>

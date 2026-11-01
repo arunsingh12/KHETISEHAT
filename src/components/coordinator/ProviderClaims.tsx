@@ -33,7 +33,7 @@ export function ProviderClaims({ provider: p }: { provider: ProviderProfileModel
       {rows.map(([label, value]) => (
         <div key={label} className="contents">
           <dt className="text-ink-faint">{label}</dt>
-          <dd className="text-ink-soft">{value}</dd>
+          <dd className="whitespace-pre-line text-ink-soft">{value}</dd>
         </div>
       ))}
     </dl>
