@@ -19,6 +19,7 @@ export function ActionForm({
   variant = "primary",
   onSuccess,
   resetOnSuccess = true,
+  successMessage = null,
   className,
 }: {
   action: (prevState: ActionResult | null, formData: FormData) => Promise<ActionResult>;
@@ -28,6 +29,8 @@ export function ActionForm({
   variant?: "primary" | "marigold" | "danger" | "secondary";
   onSuccess?: () => void;
   resetOnSuccess?: boolean;
+  /** Confirmation shown under the form after a successful submit — for forms that stay on screen. */
+  successMessage?: string | null;
   className?: string;
 }) {
   const [state, formAction] = useActionState(action, null);
@@ -45,6 +48,11 @@ export function ActionForm({
     <form ref={formRef} action={formAction} className={clsx("space-y-3", className)}>
       {children}
       {state && !state.ok && <p className="text-sm text-status-danger">{state.error}</p>}
+      {state?.ok && successMessage && (
+        <p role="status" className="text-sm font-medium text-status-active">
+          ✓ {successMessage}
+        </p>
+      )}
       <SubmitButton variant={variant} pendingText={pendingLabel}>
         {submitLabel}
       </SubmitButton>

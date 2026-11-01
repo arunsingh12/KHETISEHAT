@@ -24,6 +24,7 @@ export function FarmerPhotoForm({
       submitLabel="Save Photo"
       pendingLabel="Saving…"
       resetOnSuccess={false}
+      successMessage="Photo saved"
       className="space-y-3"
     >
       {userId && <input type="hidden" name="userId" value={userId} />}

@@ -32,6 +32,7 @@ export function ProviderProfileForm({
       submitLabel={submitLabel}
       pendingLabel="Saving…"
       resetOnSuccess={false}
+      successMessage="Profile saved"
       className="mt-6 max-w-2xl space-y-4 rounded-xl border border-line bg-surface p-5"
     >
       {hidden && Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}

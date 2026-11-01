@@ -281,6 +281,21 @@ export async function cancelBooking(bookingId: string, reason: string) {
     bookingId,
   });
 
+  // Tell the provider too, so nobody turns up for a cancelled job.
+  const provider = booking.providerId
+    ? await prisma.providerProfile.findUnique({ where: { id: booking.providerId }, select: { userId: true } })
+    : null;
+  if (provider) {
+    await notify({
+      userId: provider.userId,
+      type: "STATUS_CHANGED",
+      title: "Booking cancelled",
+      message: `This booking was cancelled — please don't go ahead with the work. Reason: ${reason}`,
+      bookingId,
+      sms: true,
+    });
+  }
+
   return updated;
 }
 

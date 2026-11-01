@@ -13,7 +13,7 @@ export function AccountForm({
   user: { id: string; name: string; phone: string | null; email: string | null };
 }) {
   return (
-    <ActionForm action={updateAccountAction} submitLabel="Save Account" pendingLabel="Saving…" resetOnSuccess={false} className="space-y-3">
+    <ActionForm action={updateAccountAction} submitLabel="Save Account" pendingLabel="Saving…" resetOnSuccess={false} successMessage="Account saved" className="space-y-3">
       <input type="hidden" name="userId" value={user.id} />
       <div>
         <label className={labelClass}>Full name</label>
@@ -36,7 +36,7 @@ export function AccountForm({
 
 export function PasswordForm({ userId }: { userId: string }) {
   return (
-    <ActionForm action={setPasswordAction} submitLabel="Set New Password" pendingLabel="Saving…" className="space-y-3">
+    <ActionForm action={setPasswordAction} submitLabel="Set New Password" pendingLabel="Saving…" successMessage="Password changed — share it with them" className="space-y-3">
       <input type="hidden" name="userId" value={userId} />
       <div>
         <label className={labelClass}>New password</label>

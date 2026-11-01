@@ -13,7 +13,13 @@ export function StaffBookingForm({
   providers: { group: string; options: { id: string; label: string }[] }[];
 }) {
   return (
-    <ActionForm action={createBookingForFarmerAction} submitLabel="Create Booking" pendingLabel="Booking…" className="space-y-3">
+    <ActionForm
+      action={createBookingForFarmerAction}
+      submitLabel="Create Booking"
+      pendingLabel="Booking…"
+      successMessage="Booking created — the provider has been asked to set a price"
+      className="space-y-3"
+    >
       <input type="hidden" name="farmerId" value={farmerId} />
       <div>
         <label className={labelClass}>Provider</label>
