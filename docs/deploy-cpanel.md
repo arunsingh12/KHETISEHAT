@@ -60,6 +60,7 @@ add each of these (use the production values from your private env file):
 | `RAZORPAY_WEBHOOK_SECRET` | from step 7 |
 | `CRON_SECRET` | long random string, used in step 6 |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, `TWILIO_FROM_NUMBER` | for SMS — leave all blank to only log SMS |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | for password-reset emails via the cPanel mailbox (`mail.khetisehat.com`, 465) — leave blank to only log emails |
 | `ANTHROPIC_API_KEY` | optional (coordinator AI intake) |
 
 Click **Save**, then **Start App** (or **Restart**). Open your domain.

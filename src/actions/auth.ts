@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { isSmsConfigured, sendSms } from "@/lib/sms";
+import { isEmailConfigured, sendEmail } from "@/lib/email";
 import { registerSchema, requestPasswordResetSchema, resetPasswordSchema } from "@/lib/validation";
 import type { ActionResult } from "@/lib/types";
 
@@ -74,11 +75,30 @@ export async function requestPasswordReset(
 
   const resetLink = `${process.env.APP_URL ?? "http://localhost:3000"}/reset-password/${token}`;
 
-  // The link goes only to the account's own phone. Showing it on the page
-  // would let anyone who knows a phone number take over that account — so
-  // that's allowed only in local development when SMS isn't set up.
-  const sent = await sendSms(user.phone, `Kheti Sehat: reset your password (valid 1 hour): ${resetLink}`);
-  if (!sent && !isSmsConfigured() && process.env.NODE_ENV !== "production") {
+  // The link goes only to the account's own email and/or phone. Showing it
+  // on the page would let anyone who knows a phone number or email take over
+  // that account — so that's allowed only in local development when neither
+  // email nor SMS is set up.
+  const [emailSent, smsSent] = await Promise.all([
+    sendEmail({
+      to: user.email,
+      subject: "Reset your Kheti Sehat password",
+      text:
+        `Namaste ${user.name},\n\n` +
+        `Someone asked to reset the password for your Kheti Sehat account. ` +
+        `Open this link within 1 hour to choose a new password:\n\n${resetLink}\n\n` +
+        `If you didn't ask for this, you can ignore this email — your password won't change.\n\n— Kheti Sehat`,
+      html:
+        `<p>Namaste ${escapeHtml(user.name)},</p>` +
+        `<p>Someone asked to reset the password for your Kheti Sehat account. Open this link within 1 hour to choose a new password:</p>` +
+        `<p><a href="${resetLink}" style="display:inline-block;background:#2e6b43;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Reset my password</a></p>` +
+        `<p style="color:#666;font-size:13px">Or copy this link: ${resetLink}</p>` +
+        `<p style="color:#666;font-size:13px">If you didn't ask for this, you can ignore this email — your password won't change.</p>` +
+        `<p>— Kheti Sehat</p>`,
+    }),
+    sendSms(user.phone, `Kheti Sehat: reset your password (valid 1 hour): ${resetLink}`),
+  ]);
+  if (!emailSent && !smsSent && !isSmsConfigured() && !isEmailConfigured() && process.env.NODE_ENV !== "production") {
     console.log(`[password reset] ${user.email ?? user.phone}: ${resetLink}`);
     return { ok: true, resetLink };
   }
@@ -106,4 +126,8 @@ export async function resetPassword(_prevState: ActionResult | null, formData: F
   ]);
 
   redirect("/login?reset=1");
+}
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

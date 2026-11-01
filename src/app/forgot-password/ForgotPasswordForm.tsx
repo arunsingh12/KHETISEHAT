@@ -18,10 +18,13 @@ export function ForgotPasswordForm() {
       {state && !state.ok && <p className="text-sm text-status-danger">{state.error}</p>}
       {state?.ok && (
         <div className="rounded-lg bg-status-active-bg p-3 text-sm text-status-active">
-          <p>If that account exists, a reset link has been sent.</p>
+          <p>
+            If that account exists, we&apos;ve sent a reset link to its email and/or phone. It works for 1 hour —
+            check your spam folder too.
+          </p>
           {state.resetLink && (
             <p className="mt-2 break-all">
-              No email service is configured yet, so here&apos;s the link directly:{" "}
+              Local testing only (no email or SMS set up) — here&apos;s the link:{" "}
               <a href={state.resetLink} className="font-medium underline">
                 {state.resetLink}
               </a>
