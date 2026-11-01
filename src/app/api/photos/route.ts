@@ -16,13 +16,13 @@ function sniffImageType(bytes: Uint8Array): "image/jpeg" | "image/png" | "image/
 }
 
 /**
- * Upload a profile photo. Providers upload their own; admins and coordinators
- * upload for providers they manage. Returns the URL to save as photoUrl.
+ * Upload a profile photo. Farmers and providers upload their own; admins and
+ * coordinators upload for people they manage. Returns the URL to save as photoUrl.
  */
 export async function POST(request: Request) {
   const session = await auth();
   const role = session?.user?.role;
-  if (!session?.user || (role !== "PROVIDER" && role !== "ADMIN" && role !== "COORDINATOR")) {
+  if (!session?.user || !role) {
     return NextResponse.json({ error: "Please log in to upload a photo" }, { status: 401 });
   }
 

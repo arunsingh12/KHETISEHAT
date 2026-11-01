@@ -136,6 +136,7 @@ model User {
   passwordHash String
   role         Role
   active       Boolean  @default(true) // admins can disable an account without deleting it
+  photoUrl     String? // profile picture for farmers (providers use ProviderProfile.photoUrl)
   createdAt    DateTime @default(now())
 
   providerProfile ProviderProfile?

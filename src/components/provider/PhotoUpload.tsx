@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { labelClass } from "@/lib/ui";
 
@@ -13,7 +13,19 @@ const MAX_SIDE = 1200;
  * uploading. The resulting URL goes into a hidden `photoUrl` field that's
  * saved with the rest of the profile form.
  */
-export function PhotoUpload({ initialUrl, name }: { initialUrl: string | null; name: string }) {
+export function PhotoUpload({
+  initialUrl,
+  name,
+  hint = "A clear photo of you or your equipment. On a phone you can take one with the camera.",
+  label = "Profile photo",
+}: {
+  initialUrl: string | null;
+  name: string;
+  hint?: string;
+  /** Pass null when the surrounding section already has a heading. */
+  label?: string | null;
+}) {
+  const inputId = useId();
   const [url, setUrl] = useState(initialUrl ?? "");
   const [status, setStatus] = useState<"idle" | "uploading" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -48,7 +60,7 @@ export function PhotoUpload({ initialUrl, name }: { initialUrl: string | null; n
 
   return (
     <div>
-      <label className={labelClass}>Profile photo</label>
+      {label && <label className={labelClass}>{label}</label>}
       <input type="hidden" name="photoUrl" value={url} />
       <div className="flex flex-wrap items-center gap-4">
         <div className="h-28 w-40 shrink-0 overflow-hidden rounded-lg border border-line bg-surface-2">
@@ -67,10 +79,10 @@ export function PhotoUpload({ initialUrl, name }: { initialUrl: string | null; n
             accept="image/*"
             onChange={(e) => onPick(e.target.files?.[0])}
             className="hidden"
-            id="photo-file"
+            id={inputId}
           />
           <label
-            htmlFor="photo-file"
+            htmlFor={inputId}
             className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-deep"
           >
             {status === "uploading" ? "Uploading…" : url ? "Change photo" : "Upload photo"}
@@ -90,7 +102,7 @@ export function PhotoUpload({ initialUrl, name }: { initialUrl: string | null; n
         </div>
       </div>
       <p className={`mt-2 text-xs ${status === "error" ? "text-status-danger" : "text-ink-faint"}`}>
-        {message || "A clear photo of you or your equipment. On a phone you can take one with the camera."}
+        {message || hint}
       </p>
     </div>
   );

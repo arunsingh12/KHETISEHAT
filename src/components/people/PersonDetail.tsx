@@ -6,6 +6,7 @@ import { setActiveAction, staffUpdateProviderProfile } from "@/actions/people";
 import { verifyProvider } from "@/actions/profile";
 import { AccountForm, DeletePersonButton, PasswordForm } from "@/components/people/AccountForms";
 import { StaffBookingForm } from "@/components/people/StaffBookingForm";
+import { FarmerPhotoForm } from "@/components/people/FarmerPhotoForm";
 import { ProviderProfileForm } from "@/components/provider/ProviderProfileForm";
 import { QueueBookingCard } from "@/components/booking/QueueBookingCard";
 import { CommissionDialog } from "@/components/admin/CommissionDialog";
@@ -81,6 +82,11 @@ export async function PersonDetail({
           <div className="mt-3">
             <AccountForm user={user} />
           </div>
+          {isFarmer && (
+            <div className="mt-5 border-t border-line-soft pt-4">
+              <FarmerPhotoForm userId={user.id} name={user.name} photoUrl={user.photoUrl} />
+            </div>
+          )}
         </section>
 
         <section className={card}>

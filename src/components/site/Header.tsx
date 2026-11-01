@@ -6,6 +6,7 @@ import { getDictionary } from "@/lib/i18n";
 import { LangSwitcher } from "@/components/site/LangSwitcher";
 import { ButtonLink } from "@/components/ui/Button";
 import { DASHBOARD_BY_ROLE } from "@/lib/constants";
+import { prisma } from "@/lib/prisma";
 
 export async function Header() {
   const [session, { locale, t }] = await Promise.all([auth(), getDictionary()]);
@@ -14,6 +15,14 @@ export async function Header() {
   const redPill =
     "inline-flex items-center gap-2 rounded-full bg-[#d93a2b] px-4 py-2 text-sm font-semibold text-white shadow-md shadow-[#d93a2b]/25 transition hover:brightness-95";
   const initial = session?.user.name?.trim()[0]?.toUpperCase() ?? "?";
+  // Profile picture for the avatar: a farmer's own photo, or a provider's profile photo.
+  const me = session?.user
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { photoUrl: true, providerProfile: { select: { photoUrl: true } } },
+      })
+    : null;
+  const avatarUrl = me?.photoUrl ?? me?.providerProfile?.photoUrl ?? null;
 
   return (
     <header className="bg-surface">
@@ -63,9 +72,14 @@ export async function Header() {
                 href={DASHBOARD_BY_ROLE[session.user.role]}
                 title={`${t.nav.dashboard} — ${session.user.name ?? ""}`}
                 aria-label={t.nav.dashboard}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-brand font-display text-lg font-bold text-white hover:bg-brand-deep"
+                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-brand font-display text-lg font-bold text-white hover:bg-brand-deep"
               >
-                {initial}
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  initial
+                )}
               </Link>
             </div>
           ) : (

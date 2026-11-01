@@ -149,6 +149,16 @@ export const rateProviderSchema = z.object({
   comment: z.string().trim().max(500).optional(),
 });
 
+/** A profile photo: an uploaded photo (/api/photos/<id>), an older external link, or "" to clear. */
+const photoUrlField = z.union([
+  z.literal(""),
+  z.string().regex(/^\/api\/photos\/[a-z0-9]{20,40}$/),
+  z.url({ protocol: /^https?$/, error: "Photo link must start with http:// or https://" }),
+]);
+
+/** A farmer (or staff for a farmer) setting the profile picture. */
+export const userPhotoSchema = z.object({ photoUrl: photoUrlField });
+
 const optionalText = (max: number) =>
   z
     .string()
@@ -186,13 +196,8 @@ export const updateProviderProfileSchema = z
     bankIfsc: z.string().trim().optional(),
     upiId: z.string().trim().optional(),
     panNumber: z.string().trim().optional(),
-    // Shown on the provider's directory card; empty clears it. Either an
-    // uploaded photo (/api/photos/<id>) or an older external link.
-    photoUrl: z.union([
-      z.literal(""),
-      z.string().regex(/^\/api\/photos\/[a-z0-9]{20,40}$/),
-      z.url({ protocol: /^https?$/, error: "Photo link must start with http:// or https://" }),
-    ]),
+    // Shown on the provider's directory card; empty clears it.
+    photoUrl: photoUrlField,
   })
   .superRefine((d, ctx) => {
     if (d.section === "AGRI") {

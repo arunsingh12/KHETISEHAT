@@ -21,6 +21,7 @@ import {
   setPasswordSchema,
   staffBookingSchema,
   updateAccountSchema,
+  userPhotoSchema,
 } from "@/lib/validation";
 import type { ActionResult } from "@/lib/types";
 
@@ -100,6 +101,19 @@ export async function updateAccountAction(_prev: ActionResult | null, formData: 
   }
 
   await prisma.user.update({ where: { id: userId }, data: { name, phone, email } });
+  refresh();
+  return { ok: true };
+}
+
+/** Staff set or remove a farmer's profile picture (a provider's is part of their provider profile). */
+export async function setFarmerPhotoAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  await requireStaff();
+  const user = await managedUser(String(formData.get("userId") ?? ""));
+  if (!user || user.role !== "FARMER") return { ok: false, error: "Farmer not found" };
+  const parsed = userPhotoSchema.safeParse({ photoUrl: String(formData.get("photoUrl") ?? "") });
+  if (!parsed.success) return { ok: false, error: "That photo couldn't be saved — please upload it again" };
+
+  await prisma.user.update({ where: { id: user.id }, data: { photoUrl: parsed.data.photoUrl || null } });
   refresh();
   return { ok: true };
 }

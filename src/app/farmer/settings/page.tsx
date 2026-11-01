@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/format";
+import { FarmerPhotoForm } from "@/components/people/FarmerPhotoForm";
 
 export default async function FarmerSettingsPage() {
   const sessionUser = await requireUser(["FARMER"]);
@@ -18,6 +19,12 @@ export default async function FarmerSettingsPage() {
   return (
     <div>
       <h1 className="font-display text-2xl font-bold">Account Setting</h1>
+
+      <section className="mt-5 max-w-md rounded-xl border border-line bg-surface p-5">
+        <h2 className="mb-3 font-display text-lg font-semibold">Profile photo · प्रोफ़ाइल फोटो</h2>
+        <FarmerPhotoForm name={user.name} photoUrl={user.photoUrl} />
+      </section>
+
       <div className="mt-5 max-w-md space-y-3 rounded-xl border border-line bg-surface p-5">
         {fields.map((f) => (
           <div key={f.label}>
